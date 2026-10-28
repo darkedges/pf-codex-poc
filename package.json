@@ -1,0 +1,21 @@
+{
+  "name": "federated-copilot-identity-codex",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Codex-ready proof of concept: cross-domain user+agent delegation and brokered Copilot/M365 access",
+  "type": "module",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "keys": "node scripts/generate-dev-keys.mjs",
+    "dev": "node scripts/dev.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:production": "node --experimental-strip-types --test tests/production/*.test.ts",
+    "check": "npm test"
+  },
+  "optionalDependencies": {
+    "jose": "6.2.3"
+  }
+}

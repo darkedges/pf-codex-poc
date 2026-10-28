@@ -1,0 +1,50 @@
+# Simulation only. Generate local keys first with `npm run keys`.
+# Only gateway 1 is published, bound to localhost on the remote machine.
+x-demo-base: &demo-base
+  build: .
+  environment:
+    DEMO_ONLY: "true"
+    HOST: "0.0.0.0"
+    COPILOT_MODE: mock
+    M365_MODE: mock
+  volumes:
+    - ./.local/keys:/app/.local/keys:ro
+  restart: unless-stopped
+services:
+  ping-a-mock:
+    <<: *demo-base
+    ports:
+      - "127.0.0.1:9201:9201"
+    command: ["node", "--experimental-strip-types", "src/services/mock-pf-a.ts"]
+  delegation-mock:
+    <<: *demo-base
+    command: ["node", "--experimental-strip-types", "src/services/delegation.ts"]
+  ping-b-mock:
+    <<: *demo-base
+    command: ["node", "--experimental-strip-types", "src/services/mock-pf-b.ts"]
+  copilot-broker:
+    <<: *demo-base
+    command: ["node", "--experimental-strip-types", "src/services/copilot-broker.ts"]
+  gateway-2:
+    <<: *demo-base
+    environment:
+      DEMO_ONLY: "true"
+      HOST: "0.0.0.0"
+      PF_B_URL: http://ping-b-mock:9202
+      BROKER_URL: http://copilot-broker:9400
+    command: ["node", "--experimental-strip-types", "src/services/gateway-2.ts"]
+  gateway-1:
+    <<: *demo-base
+    environment:
+      DEMO_ONLY: "true"
+      HOST: "0.0.0.0"
+      PF_A_URL: http://ping-a-mock:9201
+      DELEGATION_URL: http://delegation-mock:9200
+      GATEWAY_2_URL: http://gateway-2:9302
+    depends_on:
+      - gateway-2
+      - ping-a-mock
+      - delegation-mock
+    ports:
+      - "127.0.0.1:9301:9301"
+    command: ["node", "--experimental-strip-types", "src/services/gateway-1.ts"]
