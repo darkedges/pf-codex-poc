@@ -1,9 +1,14 @@
 ---
-title: "Building a Federated Copilot: Part 5, SharePoint Documents Without External Entra Users"
+title: >-
+  Building a Federated Copilot: Part 5, SharePoint Documents Without External
+  Entra Users
 published: true
-description: "Build a Sites.Selected app-only document broker, preserve federated user and agent policy, and verify a real document-backed Copilot answer."
-tags: ai, security, microsoft, architecture
-series: "Building a Federated Copilot with PingFederate"
+description: >-
+  Build a Sites.Selected app-only document broker, preserve federated user and
+  agent policy, and verify a real document-backed Copilot answer.
+tags: 'ai, security, microsoft, architecture'
+series: Building a Federated Copilot with PingFederate
+devto_id: 4971520
 ---
 
 The external user can now authenticate with PF and invoke a delegated diagnostic through Copilot Studio. The next requirement is document access.
