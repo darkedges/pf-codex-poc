@@ -1,9 +1,12 @@
 ---
-title: "Building a Federated Copilot: Part 1, Identity Before Integration"
+title: 'Building a Federated Copilot: Part 1, Identity Before Integration'
 published: true
-description: "Design the human, agent and delegation contract, then prove it in a local simulation before connecting real identity providers."
-tags: security, ai, oauth, typescript
-series: "Building a Federated Copilot with PingFederate"
+description: >-
+  Design the human, agent and delegation contract, then prove it in a local
+  simulation before connecting real identity providers.
+tags: 'security, ai, oauth, typescript'
+series: Building a Federated Copilot with PingFederate
+devto_id: 4971512
 ---
 
 An external AI agent should be able to help a partner user work with an internal Copilot Studio agent. The partner authenticates with PingFederate, does not have an Entra account and should not acquire one as an accidental side effect of using the application.
