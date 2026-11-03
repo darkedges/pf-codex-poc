@@ -1,9 +1,14 @@
 ---
-title: "Building a Federated Copilot: Part 6, Ionic React, Fingerprints and Persistent Sessions"
+title: >-
+  Building a Federated Copilot: Part 6, Ionic React, Fingerprints and Persistent
+  Sessions
 published: true
-description: "Move the browser PoC into Ionic React with cryptographic Android biometric unlock, a server-held provider session and a fresh chat on every entry."
-tags: android, react, security, ai
-series: "Building a Federated Copilot with PingFederate"
+description: >-
+  Move the browser PoC into Ionic React with cryptographic Android biometric
+  unlock, a server-held provider session and a fresh chat on every entry.
+tags: 'android, react, security, ai'
+series: Building a Federated Copilot with PingFederate
+devto_id: 4971521
 ---
 
 After the browser produced a verified document-backed answer, the next requirement was a phone application that could demonstrate the integration without repeated deployment windows and several logins.
