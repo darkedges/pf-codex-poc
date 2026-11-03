@@ -1,9 +1,14 @@
 ---
-title: "Building a Federated Copilot: Part 4, Making Copilot Studio Accept the Right Token"
+title: >-
+  Building a Federated Copilot: Part 4, Making Copilot Studio Accept the Right
+  Token
 published: true
-description: "Configure the tenant, Generic OAuth and Direct Line, then diagnose token-post failures and prove a delegated connector invocation."
-tags: ai, security, oauth, microsoft
-series: "Building a Federated Copilot with PingFederate"
+description: >-
+  Configure the tenant, Generic OAuth and Direct Line, then diagnose token-post
+  failures and prove a delegated connector invocation.
+tags: 'ai, security, oauth, microsoft'
+series: Building a Federated Copilot with PingFederate
+devto_id: 4971516
 ---
 
 The most time-consuming part of the integration was not generating another JWT. It was proving that the particular credential sent to a Microsoft endpoint belonged at that endpoint.
