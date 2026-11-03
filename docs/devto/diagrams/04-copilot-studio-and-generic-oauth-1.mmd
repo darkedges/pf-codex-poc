@@ -1,0 +1,14 @@
+sequenceDiagram
+    participant B as Trusted backend client
+    participant DL as Direct Line
+    participant C as Copilot Studio
+    participant PF as PF A provider
+    participant SP as Secure token-post endpoint
+    B->>PF: Obtain and verify provider user access token
+    B->>DL: Create a new conversation
+    DL->>C: Begin published authentication flow
+    C-->>B: OAuth card with tokenPostResource.sasUrl
+    B->>B: Validate card, destination and current authority
+    B->>SP: POST exact card URL with token JSON
+    SP-->>B: Sign-in result
+    B->>DL: Continue only after verified sign-in

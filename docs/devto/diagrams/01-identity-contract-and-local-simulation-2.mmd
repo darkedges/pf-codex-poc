@@ -1,0 +1,12 @@
+sequenceDiagram
+    participant H as Human
+    participant P as Consent and policy authority
+    participant A as Registered agent
+    participant I as Assertion issuer
+    H->>P: Approve explicit agent, purpose and expiry
+    P->>P: Persist new grant and approval evidence
+    A->>I: Authenticated request for one permitted operation
+    I->>P: Check grant, agent, organisation and mode
+    I-->>A: Fresh bounded assertion
+    A->>P: Later operation after revocation
+    P-->>A: Deny even if an older token has not expired

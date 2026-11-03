@@ -1,0 +1,14 @@
+flowchart LR
+    U[External human] --> A[Registered research agent]
+    A --> G1[Gateway 1]
+    G1 --> G2[Gateway 2]
+    G2 --> C[Copilot broker]
+    G1 --> PFA[PingFederate A]
+    G2 --> PFB[PingFederate B]
+    G1 --> P[Grant and policy authority]
+    G2 --> P
+    C --> P
+    C --> CS[Copilot Studio]
+    C --> D[Document broker]
+    D --> E[Entra application]
+    E --> S[Selected SharePoint site]

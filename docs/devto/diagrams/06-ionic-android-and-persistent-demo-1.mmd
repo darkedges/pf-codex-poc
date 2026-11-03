@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant A as Ionic app
+    participant N as Native biometric plugin
+    participant K as Android Keystore
+    participant B as Mobile backend
+    A->>B: Request nonce bound to enrolled device and request key
+    B-->>A: Short-lived one-use challenge
+    A->>N: Sign challenge for mobile presence
+    N->>K: Initialize authentication-bound signature
+    N->>N: Show strong fingerprint prompt
+    K-->>N: Signature only after allowed key use
+    N-->>A: Signature and public metadata
+    A->>B: Complete challenge
+    B->>B: Verify key, purpose, nonce, expiry and current authority
+    B-->>A: Short-lived foreground session

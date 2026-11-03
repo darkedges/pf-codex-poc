@@ -1,0 +1,17 @@
+sequenceDiagram
+    participant G1 as Gateway 1
+    participant G2 as Gateway 2
+    participant A as Approved PF A JWKS
+    participant P as Independent policy service
+    participant B as PF B token endpoint
+    participant J as Approved PF B JWKS
+    G1->>G2: Authenticated sender and PF A token
+    G2->>A: Resolve approved signing key
+    G2->>G2: Verify upstream token and identity contract
+    G2->>P: Check current grant and exact operation
+    G2->>B: Exchange with private_key_jwt
+    B-->>G2: New access token
+    G2->>J: Resolve approved downstream signing key
+    G2->>G2: Verify audience, identity and bounded validity
+    G2->>P: Recheck current authority before release
+    G2-->>G1: Release verified result
