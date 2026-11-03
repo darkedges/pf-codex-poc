@@ -1,9 +1,12 @@
 ---
-title: "Building a Federated Copilot: Part 2, Real PingFederate Token Exchange"
+title: 'Building a Federated Copilot: Part 2, Real PingFederate Token Exchange'
 published: true
-description: "Replace simulated exchanges with two TLS-protected PingFederate containers, pinned JWKS validation and private_key_jwt authentication."
-tags: security, oauth, docker, typescript
-series: "Building a Federated Copilot with PingFederate"
+description: >-
+  Replace simulated exchanges with two TLS-protected PingFederate containers,
+  pinned JWKS validation and private_key_jwt authentication.
+tags: 'security, oauth, docker, typescript'
+series: Building a Federated Copilot with PingFederate
+devto_id: 4971513
 ---
 
 Part 1 defined the identity contract. This part puts actual PingFederate servers behind it.
