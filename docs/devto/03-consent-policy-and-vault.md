@@ -1,9 +1,12 @@
 ---
-title: "Building a Federated Copilot: Part 3, Consent, Revocation and Vault"
+title: 'Building a Federated Copilot: Part 3, Consent, Revocation and Vault'
 published: true
-description: "Persist grants, authenticate policy callers and move signing into Vault without confusing device sessions, human approval and agent authority."
-tags: security, oauth, vault, typescript
-series: "Building a Federated Copilot with PingFederate"
+description: >-
+  Persist grants, authenticate policy callers and move signing into Vault
+  without confusing device sessions, human approval and agent authority.
+tags: 'security, oauth, vault, typescript'
+series: Building a Federated Copilot with PingFederate
+devto_id: 4971515
 ---
 
 Real token exchange answers whether two identity domains can exchange signed evidence. It does not answer who owns a grant, how revocation survives a restart or which process may use a signing key.
