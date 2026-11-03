@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant U as Human browser
+    participant C as Consent portal
+    participant F as PF A
+    participant P as Policy authority
+    participant DB as Durable store
+    C->>F: PAR and authorization code flow with PKCE
+    F-->>C: Code bound to callback and transaction
+    C->>F: Redeem code using signed client authentication
+    C->>P: Verified login evidence for consent preview
+    P-->>C: Registered agent, resource, modes and review digest
+    U->>C: Approve reviewed terms
+    C->>P: Login evidence and exact review digest
+    P->>DB: Commit grant, approval evidence and audit
+    DB-->>P: New grant ID
+    P-->>C: Approved permission reference

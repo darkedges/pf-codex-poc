@@ -1,0 +1,14 @@
+stateDiagram-v2
+    [*] --> Locked
+    Locked --> Starting: Sign in
+    Starting --> Browser: Fixed-provider launch
+    Browser --> Completing: Bound App Link return
+    Completing --> Consent: Manual review selected
+    Completing --> Chat: Current approval available
+    Consent --> Chat: Explicit approval
+    Locked --> Completing: Fingerprint resume
+    Chat --> Locked: Background or lock
+    Starting --> Error: Native or network failure
+    Completing --> Error: Verification failure
+    Chat --> Error: Authority or service failure
+    Error --> Starting: New explicit sign-in

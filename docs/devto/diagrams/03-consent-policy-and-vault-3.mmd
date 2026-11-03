@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> Prepared
+    Prepared --> Approved
+    Approved --> PendingWrite
+    PendingWrite --> Confirmed: Read-back matches
+    PendingWrite --> Uncertain: Failure or lost response
+    Uncertain --> Reconciled: Inspect owned state
+    Reconciled --> Confirmed: Actual result verified
+    Confirmed --> [*]

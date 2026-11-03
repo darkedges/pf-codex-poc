@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant U as Verified human
+    participant P as Grant authority
+    participant V as Vault
+    participant A as PF A
+    participant B as PF B
+    participant D as Document broker
+    participant G as Graph and SharePoint
+    U->>P: Approve registered agent and exact resource
+    P->>V: Sign bounded document assertion
+    V-->>P: Signed evidence
+    P->>A: Document exchange with independent actor proof
+    A-->>P: Upstream document token
+    P->>B: Audience-specific second exchange
+    B-->>D: Document broker proof
+    D->>P: Check current human, actor, grant and resource
+    D->>G: Bounded metadata and content requests
+    D->>P: Recheck authority before releasing text

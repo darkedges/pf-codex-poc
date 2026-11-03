@@ -1,0 +1,17 @@
+sequenceDiagram
+    participant M as Mobile app
+    participant B as Backend
+    participant F as PF A
+    participant W as System browser
+    M->>M: Create device key and native pending claim secret
+    M->>B: Device public key and hash of claim secret
+    B->>F: PAR with PKCE, state, nonce and private_key_jwt
+    B-->>M: Fixed-provider authorization URL
+    M->>W: Open approved provider URL
+    W->>F: Human sign-in
+    F-->>B: Code at fixed backend callback
+    B->>F: Redeem code with PKCE and signed client assertion
+    B-->>W: One-use HTTPS App Link handoff
+    W->>M: Return to verified app
+    M->>B: Claim handoff with native transaction secret
+    B-->>M: Enrollment challenge requiring device signature

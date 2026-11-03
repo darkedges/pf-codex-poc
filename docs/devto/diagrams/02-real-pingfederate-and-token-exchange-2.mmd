@@ -1,0 +1,11 @@
+flowchart TD
+    T[Incoming signed token] --> V{Cryptographic profile valid?}
+    V -->|No| D[Deny]
+    V -->|Yes| P{Current grant permits operation?}
+    P -->|No| D
+    P -->|Yes| X[Exchange through PF B]
+    X --> O{Output preserves identity and bounds?}
+    O -->|No| D
+    O -->|Yes| R{Authority still active?}
+    R -->|No| D
+    R -->|Yes| A[Release]

@@ -1,0 +1,8 @@
+erDiagram
+    ORGANISATION ||--o{ HUMAN : contains
+    ORGANISATION ||--o{ AGENT : registers
+    HUMAN ||--o{ GRANT : owns
+    AGENT ||--o{ GRANT : acts_under
+    GRANT ||--|| APPROVAL_EVIDENCE : requires
+    GRANT ||--o{ AUDIT_EVENT : records
+    WORKLOAD ||--o{ USED_ASSERTION : authenticates

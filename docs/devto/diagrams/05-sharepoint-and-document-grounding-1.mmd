@@ -1,0 +1,8 @@
+flowchart LR
+    H[PF human and registered agent] --> P[Current external policy]
+    P --> B[Document broker]
+    C[Dedicated app certificate] --> E[Entra token endpoint]
+    E --> B
+    B --> G[Microsoft Graph]
+    G --> S[Explicitly selected site]
+    G -. no grant .-> X[Other SharePoint sites]

@@ -1,0 +1,65 @@
+{
+  "preparedAt": "2026-11-03T20:24:16.891Z",
+  "publishedToDevTo": false,
+  "articleCount": 6,
+  "wordCount": 10252,
+  "diagramCount": 14,
+  "validator": "Mermaid 11.12.0 with jsdom 26.1.0",
+  "devToVisualPreview": "NOT_PERFORMED",
+  "articles": [
+    {
+      "file": "01-identity-contract-and-local-simulation.md",
+      "words": 1420,
+      "mermaidDiagrams": 2,
+      "sha256": "af914b9b11afafd0747fe60605496421f0200e6bfb21ee9eb8828c4660a5e5f2",
+      "frontMatter": "PASS",
+      "privacyAndStyle": "PASS",
+      "mermaidSyntax": "PASS"
+    },
+    {
+      "file": "02-real-pingfederate-and-token-exchange.md",
+      "words": 1269,
+      "mermaidDiagrams": 2,
+      "sha256": "6c49e4faa56be41c61e3068b92833c864b45769782eb0ef7e1001f927720a921",
+      "frontMatter": "PASS",
+      "privacyAndStyle": "PASS",
+      "mermaidSyntax": "PASS"
+    },
+    {
+      "file": "03-consent-policy-and-vault.md",
+      "words": 1700,
+      "mermaidDiagrams": 3,
+      "sha256": "654a352a6ceeffeaeb0b1b16b12d150bf4bb4d7da6e9e1b370201b393e1e574f",
+      "frontMatter": "PASS",
+      "privacyAndStyle": "PASS",
+      "mermaidSyntax": "PASS"
+    },
+    {
+      "file": "04-copilot-studio-and-generic-oauth.md",
+      "words": 1767,
+      "mermaidDiagrams": 2,
+      "sha256": "27977d0d7d857bf072c2621cc2b057d3fe91ec2a640557d9e79e0b9f1eff7773",
+      "frontMatter": "PASS",
+      "privacyAndStyle": "PASS",
+      "mermaidSyntax": "PASS"
+    },
+    {
+      "file": "05-sharepoint-and-document-grounding.md",
+      "words": 1694,
+      "mermaidDiagrams": 2,
+      "sha256": "d7cbb54247177543057cd48da4f302a310d78f0ce0c1225b31975309994d3bb2",
+      "frontMatter": "PASS",
+      "privacyAndStyle": "PASS",
+      "mermaidSyntax": "PASS"
+    },
+    {
+      "file": "06-ionic-android-and-persistent-demo.md",
+      "words": 2402,
+      "mermaidDiagrams": 3,
+      "sha256": "4d10b360f80a998cf1f06bc82b1f91ac813e6dc289e83096dd1a7aed1da8fcf5",
+      "frontMatter": "PASS",
+      "privacyAndStyle": "PASS",
+      "mermaidSyntax": "PASS"
+    }
+  ]
+}

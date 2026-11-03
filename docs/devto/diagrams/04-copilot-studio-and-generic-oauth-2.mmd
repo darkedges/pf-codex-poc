@@ -1,0 +1,8 @@
+flowchart TD
+    U[Verified provider token] --> B[Private exact-token binding]
+    A[Verified agent and broker authority] --> B
+    C[Separately authenticated connector caller] --> R[Relay]
+    B --> R
+    R --> P[Current grant and policy checks]
+    P --> T[Private delegated tool]
+    T --> V[Check result and authority before release]
