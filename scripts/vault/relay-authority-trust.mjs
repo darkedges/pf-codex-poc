@@ -1,0 +1,2 @@
+import {readFileSync} from 'node:fs';import {resolve} from 'node:path';import {root,load} from '../pf/common.mjs';
+export function relayAuthorityTrust(){return{pfAClientKeyPem:load('consent-gateway-1.jwks.json').keys[0],pfBClientKeyPem:JSON.parse(readFileSync(resolve(root,'.local/copilot/pf-sso-exchange.jwks.json'),'utf8')).keys[0],policyAgentKeyPem:load('policy-agent.jwks.json').keys[0],policyGatewayKeyPem:load('policy-gateway.jwks.json').keys[0]};}

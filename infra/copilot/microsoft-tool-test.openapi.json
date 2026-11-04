@@ -1,0 +1,96 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Federated Delegation Verification",
+    "version": "0.1.0",
+    "description": "Review candidate. One fixed delegated diagnostic; requires a separately stored connector key and a server-bound signed-in provider token."
+  },
+  "host": "relay.copilot.darkedges.com",
+  "basePath": "/",
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "connectionKey": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "X-Copilot-Connection-Key"
+    }
+  },
+  "security": [
+    {
+      "connectionKey": []
+    }
+  ],
+  "paths": {
+    "/v1/copilot-tools/verify-access": {
+      "post": {
+        "operationId": "VerifyDelegatedAccess",
+        "summary": "Verify the current broker-bound delegation",
+        "description": "Bind the provider header deterministically to System.User.AccessToken. Never let AI or chat supply credentials or identity/grant/resource values. Secure credential handling and actual connector support require tenant verification.",
+        "parameters": [
+          {
+            "name": "X-PF-User-Access-Token",
+            "in": "header",
+            "type": "string",
+            "required": true,
+            "maxLength": 16000,
+            "description": "PF A user token from the authenticated system variable; never request or display it in chat.",
+            "x-ms-summary": "Signed-in provider token",
+            "x-ms-visibility": "advanced"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "maxProperties": 0,
+              "default": {}
+            },
+            "x-ms-visibility": "internal"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The fixed tool diagnostic passed",
+            "schema": {
+              "type": "object",
+              "required": [
+                "authorized"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "authorized": {
+                  "type": "boolean",
+                  "enum": [
+                    true
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fixed request"
+          },
+          "401": {
+            "description": "Invalid caller or provider credential"
+          },
+          "403": {
+            "description": "Missing, consumed, expired or denied broker binding"
+          },
+          "503": {
+            "description": "Dependency, deadline or audit failure"
+          }
+        }
+      }
+    }
+  }
+}

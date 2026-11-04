@@ -1,0 +1,17 @@
+import {readdirSync} from 'node:fs';import {resolve} from 'node:path';
+import {root} from '../pf/common.mjs';import {checkedBytes,digest} from './document-exchange-approval.mjs';
+export const chatDirectory=resolve(root,'.local/tool-vault/document-chat');
+const walk=directory=>readdirSync(resolve(root,directory),{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(directory+'/'+e.name):e.isFile()&&/\.(?:ts|mjs|ps1)$/.test(e.name)?[directory+'/'+e.name]:[]);
+export function documentChatReviewFiles(){return[...walk('src'),...walk('scripts'),'package.json','package-lock.json','docs/document-chat-live-review.md','docs/document-chat-single-login-review.md',
+ '.local/pingfederate/agent.jwks.json','.local/pingfederate/oidc-config.json','.local/pingfederate/ca.pem','.local/pingfederate/localhost.pem',
+ ...['consent-gateway-1.jwks.json','consent-gateway-2.jwks.json','consent-exchange-config.json','exchange-config.json','authority-transit-config.json','vault/authority-trust.jwks.json',...['gateway','admin','consent','agent','tool'].map(n=>'policy-'+n+'.jwks.json')].map(n=>'.local/pingfederate/'+n),'.local/tool-vault/policy-workloads.json',
+ '.local/tool-vault/portal-controller-trust.json','.local/tool-vault/relay-gateway-trust.json','.local/tool-vault/portal-origin-cert.pem','.local/tool-vault/document-exchange-trust.json','.local/tool-vault/document-authority-transit.json','.local/tool-vault/sharepoint-broker-trust.json',
+ ...['consent','agent','reader'].map(n=>'.local/tool-vault/document-policy-'+n+'-trust.json'),
+ ...['exchange-config.json','pf-a-jwks.json','pf-b-jwks.json','stage-confirmed.json','verification-clock-confirmed.json'].map(n=>'.local/tool-vault/document-deployment/'+n),
+ '.local/sharepoint/approved-document-candidate.json','.local/copilot/channel-settings.json','.local/copilot/channel-credential-binding.json','.local/copilot/current-channel-contract.json',...['manifest.json','stop-result.json','diagnosis.json'].map(n=>'.local/tool-vault/document-chat/startup-ciphertext-spent/'+n),...['manifest.json','stop-result.json','independent-cleanup-confirmed.json','pending-pf-reconciliation.json'].map(n=>'.local/tool-vault/document-chat/startup-modification-date-spent/'+n),...['manifest.json','success-confirmed.json','stop-result.json'].map(n=>'.local/tool-vault/document-chat/successful-document-chat/'+n)].sort();}
+export function readDocumentChatReview(requireApproval=true){
+ const bytes=checkedBytes(resolve(chatDirectory,'manifest.json')),m=JSON.parse(bytes),names=documentChatReviewFiles();
+ if(m.schemaVersion!==1||m.purpose!=='one-question-single-visible-login-poc'||!Array.isArray(m.ssoPlan)||m.ssoPlan.length!==3||m.windowSeconds!==2700||m.maxQuestions!==1||m.maxConversations!==1||m.maxTokenPosts!==1||m.maxGraphTokens!==1||m.maxGraphGets!==2||m.maxDownloads!==1||m.maxPfTokenPosts!==12||Object.keys(m.files??{}).sort().join()!==names.join()||names.some(f=>m.files[f]!==digest(checkedBytes(resolve(root,f)))))throw Error('document_chat_review_drift');
+ if(requireApproval){const a=JSON.parse(checkedBytes(resolve(chatDirectory,'owner-approval.json')));if(a.approved!==true||a.answer!=='Approve single-login document chat deployment'||a.manifestSha256!==digest(bytes)||!Number.isSafeInteger(a.approvedAt)||a.approvedAt>Date.now()+5000||Date.now()-a.approvedAt>86400000)throw Error('document_chat_approval_required');}
+ return{manifest:m,hash:digest(bytes)};
+}

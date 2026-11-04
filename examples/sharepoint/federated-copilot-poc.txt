@@ -1,0 +1,7 @@
+Federated Copilot PoC
+
+This file contains synthetic test data only.
+Reference: FEDERATED-COPILOT-POC-001
+The approved research colour is teal.
+
+This sample contains no business records or credentials.

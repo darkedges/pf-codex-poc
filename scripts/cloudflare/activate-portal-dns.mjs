@@ -1,0 +1,13 @@
+import {readFileSync,writeFileSync,existsSync} from 'node:fs';import {resolve} from 'node:path';import {readPortalActivation,activationDirectory} from '../vault/portal-activation.mjs';import {root} from '../pf/common.mjs';
+let phase='approval';
+try{
+ if(process.argv.slice(2).join()!=='--apply')throw Error();const {manifest}=readPortalActivation(),zone=JSON.parse(readFileSync(resolve(root,'.local/cloudflare-plan/approved-zone.json'),'utf8'));
+ if(zone.expectedName!=='darkedges.com'||!/^[a-f0-9]{32}$/.test(zone.zoneId))throw Error();const token=process.env.CLOUDFLARE_API_TOKEN;if(!token){phase='manual-dns-required';throw Error();}
+ async function call(path,method='GET',body){const r=await fetch('https://api.cloudflare.com/client/v4/'+path,{method,redirect:'error',signal:AbortSignal.timeout(15000),headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});let raw='';for await(const chunk of r.body??[]){raw+=Buffer.from(chunk).toString('utf8');if(raw.length>262144)throw Error();}const value=JSON.parse(raw);if(!r.ok||value.success!==true){phase='manual-dns-required';throw Error();}return value.result;}
+ phase='dns-read';const verifiedZone=await call('zones/'+zone.zoneId);if(verifiedZone.name!=='darkedges.com'||verifiedZone.id!==zone.zoneId)throw Error();
+ const records=await call('zones/'+zone.zoneId+'/dns_records?name='+encodeURIComponent(manifest.hostname)+'&per_page=100');if(!Array.isArray(records)||records.length>1)throw Error();
+ const expected=r=>r?.type==='CNAME'&&r.name===manifest.hostname&&r.content?.replace(/\.$/,'')===manifest.dns.content&&r.proxied===true;
+ let record=records[0],created=false;if(record&&!expected(record))throw Error();
+ if(!record){const intent=resolve(activationDirectory,'dns-intent.json');if(existsSync(intent))throw Error();writeFileSync(intent,JSON.stringify({hostname:manifest.hostname,target:manifest.dns.content,at:new Date().toISOString()}),{mode:0o600,flag:'wx'});phase='dns-create';record=await call('zones/'+zone.zoneId+'/dns_records','POST',{...manifest.dns,ttl:1});created=true;}
+ if(!expected(record))throw Error();const receipt={verifiedAt:new Date().toISOString(),hostname:manifest.hostname,target:manifest.dns.content,proxied:true,createdThisRun:created,ingressApplied:false};writeFileSync(resolve(activationDirectory,'dns-applied.json'),JSON.stringify(receipt,null,2),{mode:0o600});console.log(JSON.stringify(receipt));
+}catch{console.error(JSON.stringify({verified:false,phase,noOverwrite:true,automaticRetry:false,manualDnsMayBeRequired:phase==='manual-dns-required'}));process.exitCode=1;}

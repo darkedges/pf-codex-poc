@@ -1,0 +1,39 @@
+{
+  "properties": {
+    "connectionParameters": {
+      "api_key": {
+        "type": "securestring",
+        "uiDefinition": {
+          "displayName": "Relay connector key",
+          "description": "Use the approved Vault-held relay connection key. Never provide it through chat or model input.",
+          "tooltip": "Maker-provided relay credential",
+          "constraints": {
+            "tabIndex": 2,
+            "clearText": false,
+            "required": "true"
+          }
+        }
+      }
+    },
+    "iconBrandColor": "#007ee5",
+    "capabilities": [],
+    "scriptOperations": null,
+    "publisher": "DarkEdges PoC",
+    "stackOwner": "DarkEdges",
+    "policyTemplateInstances": [
+      {
+        "templateId": "setheader",
+        "title": "Forward signed-in provider token",
+        "parameters": {
+          "x-ms-apimTemplateParameter.name": "X-PF-User-Access-Token",
+          "x-ms-apimTemplateParameter.value": "@headers('X-PF-User-Access-Token')",
+          "x-ms-apimTemplateParameter.existsAction": "override",
+          "x-ms-apimTemplate-policySection": "Request",
+          "x-ms-apimTemplate-operationName": [
+            "VerifyDelegatedAccess"
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+import {readFileSync,lstatSync,realpathSync} from 'node:fs';import {resolve} from 'node:path';import {createHash} from 'node:crypto';
+import {root} from '../pf/common.mjs';
+export const documentEnrollmentFiles=['docs/document-exchange-custody-review.md','scripts/vault/enroll-document-exchange.mjs','scripts/vault/document-exchange-approval.mjs','scripts/vault/document-exchange-reader.mjs','scripts/vault/prepare-document-exchange-review.mjs','src/m365/document-exchange-custody.mjs','scripts/vault/common.mjs','scripts/vault/tool-custody.mjs','scripts/vault/protect-tool-directory.ps1'];
+export function checkedBytes(path){const s=lstatSync(path);if(!s.isFile()||s.isSymbolicLink()||s.nlink!==1||s.size>262144||realpathSync(path).toLowerCase()!==resolve(path).toLowerCase())throw Error('document_review_file_invalid');return readFileSync(path);}
+export const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
+export function assertDocumentEnrollmentApproval(){
+ const base=resolve(root,'.local/tool-vault/document-exchange-review'),path=resolve(base,'manifest.json'),bytes=checkedBytes(path),m=JSON.parse(bytes),a=JSON.parse(checkedBytes(resolve(base,'owner-approval.json')));
+ if(m.schemaVersion!==1||m.purpose!=='document-exchange-vault-enrollment'||m.record!=='/federated-copilot-tool-secrets/data/document-exchange'||m.microsoftRequests!==0||m.pfMutations!==0||Object.keys(m.files??{}).sort().join()!==[...documentEnrollmentFiles].sort().join()||documentEnrollmentFiles.some(f=>m.files[f]!==digest(checkedBytes(resolve(root,f))))||a.approved!==true||a.answer!=='Approve document exchange credential enrollment'||a.manifestSha256!==digest(bytes)||!Number.isSafeInteger(a.approvedAt)||a.approvedAt>Date.now()+5000||Date.now()-a.approvedAt>86400000)throw Error('Exact document exchange credential approval missing or drifted');return m;
+}

@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "deploymentEnabled": false,
+  "publicIngressEnabled": false,
+  "mountDockerSocket": false,
+  "mountExternalAgentPrivateKey": false,
+  "mockFallback": false,
+  "platform": "existing-windows-docker-host",
+  "proposedLoopbackBinding": "127.0.0.1:9464",
+  "proposedPublicHost": "relay.copilot.darkedges.com",
+  "publicPath": "/v1/copilot-tools/verify-access",
+  "privateToolOrigin": "https://tool-api:8443",
+  "runtimeRecord": "federated-copilot-tool-secrets/relay-runtime",
+  "connectorCredentialRecord": "federated-copilot-tool-secrets/relay-connection",
+  "unresolved": [
+    "external-agent-proof-custody",
+    "authenticated-control-plane-registration",
+    "persistent-container-image-and-network",
+    "controller-owned-relay-shutdown",
+    "connector-secret-and-token-trace-handling",
+    "public-route-approval",
+    "bounded-live-tool-test-approval"
+  ]
+}

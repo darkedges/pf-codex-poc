@@ -1,0 +1,25 @@
+# REVIEW CANDIDATE ONLY — NOT ACTIVE
+tunnel: a979d27b-f2cd-45cf-aada-b44c850e3a0e
+credentials-file: 'E:/development/projects/copilot/federated-copilot-codex/.local/cloudflare-connector/credentials.json'
+metrics: 127.0.0.1:19473
+loglevel: warn
+transport-loglevel: warn
+no-autoupdate: true
+ingress:
+  - hostname: pf-a.copilot.darkedges.com
+    path: "^(?:/as/(?:authorization|token)\\.oauth2|/as/[A-Za-z0-9_-]{1,128}/resume/as/authorization\\.ping|/pf/JWKS|/\\.well-known/openid-configuration|/assets/css/main\\.css|/assets/fonts/icons/iconfont\\.eot|/assets/fonts/icons/iconfont\\.svg|/assets/fonts/icons/iconfont\\.ttf|/assets/fonts/icons/iconfont\\.woff|/assets/images/auto-fix\\.svg|/assets/images/icon-alert\\.png|/assets/images/icon-biometrics\\.png|/assets/images/icon-faceid\\.png|/assets/images/icon-qr-code\\.png|/assets/images/icon-securitykey\\.png|/assets/images/icon-success\\.140\\.gif|/assets/images/icon-success\\.70\\.gif|/assets/images/icon-touchid\\.png|/assets/images/icon-windowshello\\.png|/assets/images/logo-amazon\\.png|/assets/images/logo-apple\\.png|/assets/images/logo-facebook\\.png|/assets/images/logo-github\\.png|/assets/images/logo-google\\.png|/assets/images/logo-instagram\\.png|/assets/images/logo-linkedin\\.png|/assets/images/logo-microsoft\\.png|/assets/images/logo-paypal\\.png|/assets/images/logo-twitter\\.png|/assets/images/logo-yahoo\\.png|/assets/images/ping-horizontal-logo\\.svg|/assets/images/spinner\\.100\\.gif|/assets/images/spinner\\.15\\.gif|/assets/images/spinner\\.30\\.gif|/assets/images/spinner\\.50\\.gif|/assets/scripts/authenticators/authenticator-support\\.js|/assets/scripts/captcha/captcha-script-loader\\.js|/assets/scripts/captcha/captcha-utils\\.js|/assets/scripts/pf-general\\.js)$"
+    service: https://127.0.0.1:9033
+    originRequest:
+      originServerName: localhost
+      httpHostHeader: pf-a.copilot.darkedges.com
+      caPool: 'E:/development/projects/copilot/federated-copilot-codex/.local/pingfederate/ca.pem'
+      noTLSVerify: false
+  - hostname: pf-b.copilot.darkedges.com
+    path: "^/(?:pf/JWKS|\\.well-known/openid-configuration)$"
+    service: https://127.0.0.1:9034
+    originRequest:
+      originServerName: localhost
+      httpHostHeader: pf-b.copilot.darkedges.com
+      caPool: 'E:/development/projects/copilot/federated-copilot-codex/.local/pingfederate/ca.pem'
+      noTLSVerify: false
+  - service: http_status:404

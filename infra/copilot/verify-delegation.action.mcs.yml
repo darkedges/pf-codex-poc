@@ -1,0 +1,24 @@
+mcs.metadata:
+  componentName: Federated Delegation Check - Verify the current broker-bound delegation
+kind: TaskDialog
+inputs:
+  - kind: ManualTaskInput
+    propertyName: PfUserAccessToken
+    value: =System.User.AccessToken
+  - kind: ManualTaskInput
+    propertyName: body
+    value: ={}
+modelDisplayName: Verify the current broker-bound delegation
+modelDescription: Bind the provider header deterministically to System.User.AccessToken. Never let AI or chat supply credentials or identity/grant/resource values. Secure credential handling and actual connector support require tenant verification.
+outputs:
+  - propertyName: authorized
+
+action:
+  kind: InvokeConnectorTaskAction
+  connectionReference: cra8f_FederatedDelegationTest.shared_new-5ffederated-20delegation-20check-5fd73dd157fda90830.8c0685f18be44773b44f449255900cd1
+  connectionProperties:
+    mode: Maker
+
+  operationId: VerifyDelegatedAccess
+
+outputMode: All

@@ -1,0 +1,17 @@
+# Browser trial: sign-in verified, delegated access unverified
+
+The approved browser trial finished on1 November2026 without a successful delegated tool check. The portal is stopped and its original window has expired. The spent journal and approval history are preserved; no automatic retry occurred.
+
+Human PF login, public virtual-issuer validation, consent preview and explicit agent consent succeeded. The same-human provider token was validated before broker issuance. The deployment's conversation allowance was consumed once; **zero token POSTs and zero successful tool operations** were recorded. Therefore the previous Microsoft token-post400 was not reproduced in this browser run.
+
+At04:49:28.879UTC the private relay handoff audit recorded an attempt; at04:49:28.942 it recorded denial. The portal reported unavailable immediately afterward. Source inspection found a reproducible propagation defect: the handoff and durable issuer still compare the verified human issuer only with localhost, even though the verifier now accepts and preserves the explicitly approved public virtual issuer. Two regression tests reproduced this rejection before the fix. The live audit does not retain a per-branch reason, so the precise live rejection branch remains **UNVERIFIED**; the code defect and handoff denial are independently established.
+
+The local correction passes the trusted additional issuer list from the managed relay composition through durable authority to both handoff and durable issuance. A shared helper validates/copies a bounded explicit HTTPS issuer list and rejects duplicates, credentials, queries/fragments, whitespace and non-HTTPS URLs. Unknown issuers remain denied. No actual human issuer is rewritten; subject, audience, actor, organisation, grant, mode, policy, replay and expiry checks remain. The default single issuer is retained for existing callers.
+
+**590 production tests pass** at bounded concurrency4, including public issuer propagation across custody reopen, unknown-issuer rejection and immutable malformed-config negatives. The first unrestricted run passed589/590 with an unrelated100ms synthetic signer test timing out; the bounded rerun passed590/590. The earlier issuer correction also passed372 baseline simulation tests; this follow-up changes only real relay paths and activation hash coverage.
+
+The fix is **prepared, not deployed**. Its candidate manifest adds the relay implementation/helper/composition to mandatory source coverage (83 reviewed files). The active manifest and spent journal were not replaced/reset. Applying it and running another browser trial require a reviewed deployment and a distinct fresh allowance; do not overwrite the consumed row or extend its original expiry.
+
+Independent cleanup checks confirm the one portal-owned grant is revoked, its recovery intent is marked recovered, the dedicated PF B tool client is disabled and its ownership lease is removed. No unrelated grant was revoked. Non-secret fixed evidence is retained in `.local/tool-vault/portal-activation-review/browser-trial-result.json`; no tokens, codes, cookies, raw activities or signed request values are included.
+
+Interactive browser diagnostic acceptance remains **UNVERIFIED**. The separately verified earlier scripted Microsoft PoC is unchanged; this browser run does not establish autonomous SSO, Microsoft expiry/revocation behavior, Graph access or production readiness.

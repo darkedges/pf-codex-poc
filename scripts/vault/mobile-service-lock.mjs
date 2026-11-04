@@ -1,0 +1,7 @@
+import {existsSync,readFileSync,openSync,writeFileSync,fsyncSync,closeSync,unlinkSync,lstatSync} from 'node:fs';import {randomUUID} from 'node:crypto';
+export function claimMobileServiceLock(path,ownerSid){
+ if(typeof ownerSid!=='string'||!/^S-1-[0-9-]+$/.test(ownerSid))throw Error('mobile_owner_required');
+ if(existsSync(path)){const s=lstatSync(path);if(!s.isFile()||s.isSymbolicLink()||s.nlink!==1||s.size>4096)throw Error('mobile_foreign_lock');const old=JSON.parse(readFileSync(path,'utf8'));if(old.purpose!=='mobile-service'||old.ownerSid!==ownerSid||!Number.isInteger(old.pid)||old.pid<2||typeof old.instance!=='string')throw Error('mobile_foreign_lock');let absent=false;try{process.kill(old.pid,0);}catch(e){if(e.code==='ESRCH')absent=true;}if(!absent)throw Error('mobile_existing_or_unconfirmed_owner');unlinkSync(path);}
+ const fd=openSync(path,'wx',0o600),record={purpose:'mobile-service',ownerSid,pid:process.pid,instance:randomUUID(),startedAt:new Date().toISOString()};try{writeFileSync(fd,JSON.stringify(record)+'\n');fsyncSync(fd);}catch{closeSync(fd);throw Error('mobile_lock_unconfirmed');}
+ let released=false;return{record,release(){if(released)return;released=true;closeSync(fd);const current=JSON.parse(readFileSync(path,'utf8'));if(current.instance!==record.instance||current.pid!==record.pid||current.ownerSid!==ownerSid)throw Error('mobile_lock_changed');unlinkSync(path);}};
+}

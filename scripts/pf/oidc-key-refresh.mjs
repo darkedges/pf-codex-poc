@@ -1,0 +1,11 @@
+import {createPublicKey,randomUUID} from 'node:crypto';import {writeFileSync} from 'node:fs';import {resolve} from 'node:path';import {fileURLToPath} from 'node:url';
+import {load,local,admin,call,nodes,save} from './common.mjs';
+export function reviewLocalOidcKeys(config,jwks,settings){
+ if(config?.issuer!==nodes.a.issuer||config.jwksUri!==nodes.a.issuer+'/pf/JWKS'||config.clientId!=='copilot-consent-portal'||!Array.isArray(config.keyIds)||config.keyIds.length>32||config.keyIds.some(k=>typeof k!=='string'||!k||k.length>200)||settings?.staticJwksEnabled!==false||!Array.isArray(jwks?.keys)||jwks.keys.length>64)throw Error('Local OIDC key review denied');
+ const ids=[],seen=new Set();
+ for(const key of jwks.keys){if(key.kty!=='RSA'||key.use==='enc')continue;if(!key.kid||typeof key.kid!=='string'||key.kid.length>200||seen.has(key.kid)||Object.keys(key).some(k=>['d','p','q','dp','dq','qi','oth'].includes(k))||(key.alg!==undefined&&key.alg!=='RS256')||(key.use!==undefined&&key.use!=='sig')||createPublicKey({key,format:'jwk'}).asymmetricKeyDetails?.modulusLength<2048)throw Error('Local OIDC key review denied');seen.add(key.kid);ids.push(key.kid);}
+ const result=[...new Set([...config.keyIds,...ids])];if(!ids.length||result.length>32)throw Error('Local OIDC key review denied');return result;
+}
+if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+ try{if(process.argv.slice(2).join()!=='--apply')throw Error('Use --apply for explicit local trust reconciliation');const original=load('oidc-config.json'),settings=await admin('a','keyPairs/oauthOpenIdConnect'),jwks=await call(nodes.a.issuer+'/pf/JWKS');if(jwks.status!==200)throw Error();const keyIds=reviewLocalOidcKeys(original,jwks.value,settings),id=randomUUID();writeFileSync(resolve(local,'oidc-key-review-'+id+'.json'),JSON.stringify({before:original.keyIds,after:keyIds,reviewedAt:new Date().toISOString(),issuer:original.issuer,source:original.jwksUri,adminDynamicKeysConfirmed:true},null,2),{flag:'wx',mode:0o600});save('oidc-config.json',{...original,keyIds});console.log(JSON.stringify({updated:true,added:keyIds.length-original.keyIds.length,issuer:original.issuer,requiresVerifierRestart:true,reviewId:id,pfConfigurationChanged:false}));}catch{console.error('Local OIDC trust reconciliation failed');process.exitCode=1;}
+}

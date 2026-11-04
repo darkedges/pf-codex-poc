@@ -1,0 +1,49 @@
+mcs.metadata:
+  componentName: Delegated tool verification
+  description: Runs only the fixed diagnostic using the signed-in runtime credential and returns a Boolean result.
+kind: AdaptiveDialog
+startBehavior: CancelOtherTopics
+beginDialog:
+  kind: OnActivity
+  id: main
+  type: Message
+  priority: -1
+  condition: =Lower(Trim(System.Activity.Text)) = "verify delegated tool access"
+  actions:
+    - kind: ConditionGroup
+      id: require_signin
+      conditions:
+        - id: signed_in
+          condition: =System.User.IsLoggedIn = true
+          actions:
+            - kind: SendActivity
+              id: report_connector_started
+              activity: Delegated diagnostic stage: connector started.
+            - kind: BeginDialog
+              id: verify_tool
+              dialog: cra8f_FederatedDelegationTest.action.FederatedDelegationCheck-Verifythecurrentbroker-bounddelegation
+              output:
+                binding:
+                  authorized: Topic.Authorized
+            - kind: SendActivity
+              id: report_connector_returned
+              activity: Delegated diagnostic stage: connector returned.
+            - kind: ConditionGroup
+              id: check_authorized
+              conditions:
+                - id: authorized
+                  condition: =Topic.Authorized = true
+                  actions:
+                    - kind: SendActivity
+                      id: report_verified
+                      activity: Delegated tool access verified.
+              elseActions:
+                - kind: SendActivity
+                  id: report_denied
+                  activity: Delegated tool access not verified.
+      elseActions:
+        - kind: SendActivity
+          id: require_login
+          activity: Sign in before verifying delegated tool access.
+    - kind: CancelAllDialogs
+      id: finish_verification

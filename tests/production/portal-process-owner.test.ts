@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {portalOwnerSid,portalProcessPresent} from '../../scripts/vault/portal-process-owner.mjs';
+test('portal ownership refuses malformed PIDs and detects the current process without signalling it',()=>{assert.equal(portalProcessPresent(process.pid),true);for(const pid of [0,-1,NaN,1.5,'123'])assert.throws(()=>portalProcessPresent(pid));});
+test('selected Windows owner is resolved without reading another service credential loader',{skip:process.platform!=='win32'},()=>{assert.match(portalOwnerSid(),/^S-1-5-21-(?:\d+-){3}\d+$/);});

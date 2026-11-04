@@ -1,0 +1,25 @@
+{
+  "endpoint": "https://directline.botframework.com/v3/directline",
+  "brokerAudience": "api://copilot-broker",
+  "ssoAudience": "api://replace-with-configured-provider-user-audience",
+  "providerSso": {
+    "issuer": "https://replace-with-configured-oauth-provider.invalid",
+    "audience": "api://replace-with-configured-provider-user-audience",
+    "scope": "copilot.login",
+    "maxLifetimeSeconds": 300
+  },
+  "scope": "copilot.invoke",
+  "botId": "replace-with-approved-direct-line-bot-id",
+  "trustedOrigins": ["https://replace-with-approved-portal-origin.invalid"],
+  "tokenPostRules": [
+    {
+      "origin": "https://replace-with-approved-token-post-origin.invalid",
+      "pathPrefix": "/replace-with-approved-tenant-token-post-path/",
+      "requiredQueryParameters": ["sig"]
+    }
+  ],
+  "timeoutMs": 5000,
+  "maxSessions": 100,
+  "sessionLifetimeSeconds": 300,
+  "maxActivities": 1000
+}

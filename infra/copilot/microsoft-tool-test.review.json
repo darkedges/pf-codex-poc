@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "approved": false,
+  "routeApplied": false,
+  "connectorImported": false,
+  "agentPublished": false,
+  "liveTestAllowanceCreated": false,
+  "target": {
+    "tenantId": "4161be3f-bf2b-41d4-a02b-e6f82b529d53",
+    "environmentId": "c72f8bf6-020d-e210-8662-fa461a415ec2",
+    "copilotId": "1d18f6de-66d3-f111-a05b-6045bd40333e",
+    "schemaName": "cra8f_FederatedDelegationTest"
+  },
+  "route": {
+    "hostname": "relay.copilot.darkedges.com",
+    "tunnelId": "a979d27b-f2cd-45cf-aada-b44c850e3a0e",
+    "dnsType": "CNAME",
+    "dnsTarget": "a979d27b-f2cd-45cf-aada-b44c850e3a0e.cfargotunnel.com",
+    "proxied": true,
+    "path": "/v1/copilot-tools/verify-access",
+    "method": "POST",
+    "origin": "https://127.0.0.1:9464",
+    "tlsVerified": true,
+    "privateControlPlaneExposed": false
+  },
+  "connector": {
+    "operationId": "VerifyDelegatedAccess",
+    "credentialHeader": "X-Copilot-Connection-Key",
+    "credentialVaultRecord": "federated-copilot-tool-secrets/relay-connection",
+    "providerHeader": "X-PF-User-Access-Token",
+    "providerValue": "System.User.AccessToken",
+    "fillUsing": "Custom value",
+    "body": {},
+    "outputs": [
+      "authorized"
+    ],
+    "modelChoosesCredentialsOrAuthority": false,
+    "sensitiveHandlingVerified": false
+  },
+  "requestedTest": {
+    "newDirectLineConversations": 1,
+    "secureTokenPosts": 1,
+    "successfulToolOperations": 1,
+    "automaticRunnerRetry": false,
+    "newGrantsMaximum": 1,
+    "revokeOwnedGrantAfterward": true,
+    "graphRequests": 0,
+    "newBillingPolicy": false,
+    "overwritePreviousAllowances": false
+  },
+  "requiredBeforeTest": [
+    "privateManagedEndToEndPass",
+    "publicRouteApproval",
+    "TLSAndPathDenyChecks",
+    "makerCredentialConnection",
+    "deterministicSensitiveTokenMapping",
+    "publishConfirmation",
+    "explicitOneAttemptApproval"
+  ],
+  "rollback": [
+    "removeOnlyTheNewRelayIngressAndDns",
+    "removeAgentDiagnosticToolOrRestorePriorPublishedVersion",
+    "stopManagedRelay",
+    "restorePfBClientDisabled",
+    "revokeOnlyOwnedTestGrant"
+  ]
+}

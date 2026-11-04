@@ -1,0 +1,9 @@
+{
+  "tokenPostRules": [
+    {
+      "origin": "https://token.botframework.com",
+      "pathExact": "/api/sas/postToken",
+      "requiredQueryParameters": ["expiry", "hmac", "id", "state"]
+    }
+  ]
+}

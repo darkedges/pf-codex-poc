@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {reserveProviderCapture} from '../scripts/copilot/live-budget.mjs';
+const old=()=>[{max:2,reserved:['interactive','autonomous']},{max:1,reserved:['interactive']},{max:1,reserved:['interactive']}];
+test('new explicit provider-capture allowance permits one interactive conversation without changing historical budgets',()=>{const history=old(),copy=structuredClone(history);assert.deepEqual(reserveProviderCapture(history,{max:1,reserved:[],purpose:'configured-provider-capture'}),{max:1,reserved:['interactive'],purpose:'configured-provider-capture'});assert.deepEqual(history,copy);});
+test('provider capture cannot replay or borrow old allowances',()=>{assert.throws(()=>reserveProviderCapture(old(),{max:1,reserved:['interactive'],purpose:'configured-provider-capture'}));assert.throws(()=>reserveProviderCapture(old(),{max:2,reserved:[],purpose:'configured-provider-capture'}));assert.throws(()=>reserveProviderCapture(old(),{max:1,reserved:[],purpose:'other'}));});

@@ -5,3 +5,6 @@ coverage/
 dist/
 *.log
 .DS_Store
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

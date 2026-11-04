@@ -1,0 +1,10 @@
+// Tokens arrive on stdin, never in process arguments or diagnostic output.
+import {runBoundedProbeBatch} from './bounded-probe-batch.mjs';
+import {readFileSync} from 'node:fs';import {request} from 'node:https';
+const input=JSON.parse(readFileSync(0,'utf8')),backend=input.target==='backend';
+const health=input.health==='ready'||input.health==='live'||input.health==='metrics';
+const client=input.client==='unapproved'?'other':input.client==='none'?undefined:'approved';
+const options={hostname:backend?'tool-backend':'tool-runtime',port:backend?7443:8443,path:backend?(input.path??'/pf/JWKS'):health?'/health/'+input.health:'/v1/tools/verify-access',method:backend?(input.method??'GET'):health?'GET':'POST',ca:readFileSync('/run/probe/server-ca.pem'),...(client&&!backend?{key:readFileSync('/run/probe/'+client+'-key.pem'),cert:readFileSync('/run/probe/'+client+'-cert.pem')}:{}),headers:backend||health?{}:{Authorization:'Bearer '+input.token,'Content-Type':'application/json'},timeout:8000};
+const single=()=>new Promise(done=>{const req=request(options,res=>{res.on('error',()=>done({error:'unavailable'}));res.on('aborted',()=>done({error:'unavailable'}));let raw='';res.on('data',c=>{raw+=c;if(raw.length>262144)req.destroy();});res.on('end',()=>{try{const body=JSON.parse(raw);done({status:res.statusCode,authorized:body.authorized===true,ready:body.ready===true,live:body.live===true,...(input.health==='metrics'?{metrics:body}:{}),publicJwks:Array.isArray(body.keys)&&body.keys.length>0});}catch{done({error:'invalid_response'});}});});
+req.on('error',error=>{done({error:/TLS|SSL/.test(error.code??'')?'tls_denied':'unavailable'});});req.on('timeout',()=>req.destroy());req.end(backend||health?undefined:JSON.stringify(input.body??{}));});
+try{if(input.batch){if(backend||health)throw Error();console.log(JSON.stringify({batch:await runBoundedProbeBatch(input.batch,single)}));}else console.log(JSON.stringify(await single()));}catch{console.log(JSON.stringify({error:'probe_failed'}));process.exitCode=1;}

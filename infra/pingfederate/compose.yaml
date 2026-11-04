@@ -1,0 +1,39 @@
+name: federated-copilot-pf
+x-pf: &pf
+  image: pingidentity/pingfederate:2606-13.1.0@sha256:3a74b4d40398202d7f32b029da4d59c73471bad952dec6225ca22f8857fa6be0
+  environment: &pf-environment
+    PING_IDENTITY_ACCEPT_EULA: "YES"
+    PING_IDENTITY_DEVOPS_USER: ${PING_IDENTITY_DEVOPS_USER:?Run pf:prepare first}
+    PING_IDENTITY_DEVOPS_KEY: ${PING_IDENTITY_DEVOPS_KEY:?Run pf:prepare first}
+    SERVER_PROFILE_URL: https://github.com/pingidentity/pingidentity-server-profiles.git
+    SERVER_PROFILE_PATH: getting-started/pingfederate
+  restart: unless-stopped
+services:
+  pf-a:
+    <<: *pf
+    environment:
+      <<: *pf-environment
+      PING_IDENTITY_PASSWORD: ${PF_A_INITIAL_PASSWORD:?Run pf:prepare first}
+    ports:
+      - "127.0.0.1:9996:9999"
+      - "127.0.0.1:9033:9031"
+    volumes:
+      - pf-a-out:/opt/out
+  pf-b:
+    <<: *pf
+    environment:
+      <<: *pf-environment
+      PING_IDENTITY_PASSWORD: ${PF_B_INITIAL_PASSWORD:?Run pf:prepare first}
+    ports:
+      - "127.0.0.1:9997:9999"
+      - "127.0.0.1:9034:9031"
+    volumes:
+      - pf-b-out:/opt/out
+volumes:
+  pf-a-out:
+  pf-b-out:
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${PF_DOCKER_SUBNET:-10.234.0.0/24}

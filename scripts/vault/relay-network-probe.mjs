@@ -1,0 +1,11 @@
+// Docker-only local diagnostic. Outputs finite status flags, never credentials.
+import {readFileSync} from 'node:fs';import {request} from 'node:https';import {checkServerIdentity} from 'node:tls';
+const config=JSON.parse(readFileSync('/run/probe/config.json','utf8')),input=JSON.parse(readFileSync(0,'utf8'));
+if((config.hostname!=='tool-api'&&!/^relay-tool-[a-f0-9-]{36}$/.test(config.hostname))||!['ready','missing-proof','override','missing-client','backend-jwks','backend-admin'].includes(input.operation))throw Error('Invalid fixed probe');
+const backend=input.operation.startsWith('backend-'),health=input.operation==='ready'||input.operation==='missing-client';
+const path=backend?(input.operation==='backend-jwks'?'/pf/JWKS':'/pf-admin-api/v1/version'):health?'/health/ready':'/v1/tools/verify-access';
+const result=await new Promise(done=>{
+ const req=request({hostname:backend?'tool-backend':config.hostname,port:backend?7443:8443,path,method:backend||health?'GET':'POST',agent:false,ca:readFileSync('/run/probe/ca.pem'),rejectUnauthorized:true,checkServerIdentity:(host,cert)=>checkServerIdentity(host,cert)??(cert.fingerprint256===(backend?config.backendPin:config.toolPin)?undefined:Error('Unapproved peer')),...(!backend&&input.operation!=='missing-client'?{key:readFileSync('/run/probe/key.pem'),cert:readFileSync('/run/probe/cert.pem')}:{}) ,headers:backend||health?{}:{'Content-Type':'application/json',Authorization:'Bearer synthetic-invalid-tool-proof'}},res=>{
+  let raw='';res.on('data',c=>{raw+=c;if(raw.length>262144)req.destroy();});res.on('end',()=>{let value;try{value=JSON.parse(raw);}catch{}done({status:res.statusCode,ready:value?.ready===true,authorized:value?.authorized===true,publicJwks:Array.isArray(value?.keys)&&value.keys.some(k=>k.kid==='copilot-tool-signing')&&value.keys.every(k=>!['d','p','q','dp','dq','qi','k'].some(f=>f in k))});});res.on('aborted',()=>done({error:'transport_denied'}));res.on('error',()=>done({error:'transport_denied'}));
+ });const timer=setTimeout(()=>req.destroy(),4000);req.on('close',()=>clearTimeout(timer));req.on('error',()=>done({error:'transport_denied'}));req.end(backend||health?undefined:JSON.stringify(input.operation==='override'?{resource:'unapproved',sub:'forged'}:{}));
+});console.log(JSON.stringify(result));

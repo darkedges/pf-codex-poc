@@ -1,0 +1,24 @@
+import {documentStageHash} from './document-stage-step.mjs';
+const paths=['idp/adapters/consentHTMLForm','oauth/clients/copilot-consent-portal','oauth/clients/copilot-studio-generic-oauth'];
+const fields={'Session State':'Per Adapter','Session Timeout':'5','Session Max Timeout':'5'};
+const fingerprint=o=>{const c=structuredClone(o);if(c.id==='consentHTMLForm')delete c.lastModified;else{delete c.modificationDate;if(c.clientId==='copilot-studio-generic-oauth'&&c.clientAuth?.type==='SECRET')delete c.clientAuth.encryptedSecret;}return documentStageHash(c);};
+const patch=(o,values)=>{const c=structuredClone(o);if(c.id==='consentHTMLForm'){for(const[name,value]of Object.entries(values)){const found=c.configuration.fields.filter(f=>f.name===name);if(found.length!==1)throw Error('document_chat_sso_fields');found[0].value=value;}}else c.bypassApprovalPage=values.bypassApprovalPage;return c;};
+export function documentChatSsoPlan(objects){
+ if(!Array.isArray(objects)||objects.length!==3)throw Error('document_chat_sso_profile');
+ return paths.map((path,i)=>{const o=objects[i];let before,after;
+  if(i===0){if(o.id!=='consentHTMLForm'||o.pluginDescriptorRef?.id!=='com.pingidentity.adapters.htmlform.idp.HtmlFormIdpAuthnAdapter')throw Error('document_chat_sso_profile');before=Object.fromEntries(Object.keys(fields).map(name=>{const matches=o.configuration.fields.filter(f=>f.name===name);if(matches.length!==1||typeof matches[0].value!=='string')throw Error('document_chat_sso_fields');return[name,matches[0].value];}));if(before['Session State']!=='None')throw Error('document_chat_sso_existing_session');after={...fields};}
+  else{const id=path.split('/').at(-1),scope=i===1?'openid':'copilot.login',auth=i===1?'PRIVATE_KEY_JWT':'SECRET';if(o.clientId!==id||o.enabled!==true||o.clientAuth?.type!==auth||o.restrictScopes!==true||JSON.stringify(o.restrictedScopes)!==JSON.stringify([scope])||JSON.stringify(o.grantTypes)!=='["AUTHORIZATION_CODE"]'||typeof o.bypassApprovalPage!=='boolean')throw Error('document_chat_sso_profile');before={bypassApprovalPage:o.bypassApprovalPage};after={bypassApprovalPage:true};}
+  return{path,before,after,beforeHash:fingerprint(o),afterHash:fingerprint(patch(o,after))};
+ });
+}
+export function createDocumentChatSsoLease(options){
+ const owner=structuredClone(options.owner),plan=structuredClone(options.plan),expiresAt=options.expiresAt;
+ if(!/^[a-f0-9-]{36}$/.test(owner?.instance)||!Number.isSafeInteger(owner.pid)||owner.pid<1||!Number.isSafeInteger(expiresAt)||expiresAt<=Date.now()||expiresAt>Date.now()+3600000||JSON.stringify(plan?.map(e=>e.path))!==JSON.stringify(paths))throw Error('document_chat_sso_configuration');
+ const bound=s=>s&&Array.isArray(s.entries)&&documentStageHash(s.entries.map(e=>({path:e.path,before:e.before,after:e.after,beforeHash:e.beforeHash,afterHash:e.afterHash})))===documentStageHash(plan);
+ const owned=s=>s&&bound(s)&&documentStageHash(s.owner)===documentStageHash(owner),save=s=>options.save(structuredClone(s));
+ return{
+  acquire:async()=>{if(options.read())throw Error('document_chat_sso_exists');const actual=[];for(const path of paths)actual.push(await options.admin('a',path));if(documentStageHash(documentChatSsoPlan(actual))!==documentStageHash(plan))throw Error('document_chat_sso_drift');const s={owner,expiresAt,state:'active',entries:plan.map(e=>({...e,state:'planned'}))};save(s);for(const e of s.entries){if(Date.now()>=expiresAt)throw Error('document_chat_sso_expired');const c=await options.admin('a',e.path);if(fingerprint(c)!==e.beforeHash)throw Error('document_chat_sso_drift');e.state='pending';save(s);if(e.beforeHash!==e.afterHash)await options.admin('a',e.path,'PUT',patch(c,e.after));if(fingerprint(await options.admin('a',e.path))!==e.afterHash)throw Error('document_chat_sso_unconfirmed');e.state='enabled';save(s);}},
+  check:async()=>{const s=options.read();if(!owned(s)||s.state!=='active'||Date.now()>=s.expiresAt)throw Error('document_chat_sso_unavailable');for(const e of s.entries)if(e.state!=='enabled'||fingerprint(await options.admin('a',e.path))!==e.afterHash)throw Error('document_chat_sso_drift');},
+  release:async()=>{const s=options.read();if(!s)return;if(!owned(s)||JSON.stringify(s.entries?.map(e=>e.path))!==JSON.stringify(paths))throw Error('document_chat_sso_foreign');if(s.state==='released')return;for(const e of [...s.entries].reverse()){const c=await options.admin('a',e.path),hash=fingerprint(c);if(hash!==e.beforeHash){if(hash!==e.afterHash)throw Error('document_chat_sso_drift');const next=patch(c,e.before);if(fingerprint(next)!==e.beforeHash)throw Error('document_chat_sso_restore');await options.admin('a',e.path,'PUT',next);if(fingerprint(await options.admin('a',e.path))!==e.beforeHash)throw Error('document_chat_sso_unconfirmed');}e.state='restored';save(s);}s.state='released';save(s);}
+ };
+}

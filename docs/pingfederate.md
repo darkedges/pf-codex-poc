@@ -1,6 +1,6 @@
 # PingFederate Integration Configuration (Target)
 
-Gateway 2's production library adapter is now implemented; see [configuration and live integration approval plan](gateway-2-production.md). Live server behavior remains **UNVERIFIED**. PF A and the HTTP demo remain simulations.
+Gateway 2's production library adapter is implemented; see [configuration and integration approval plan](gateway-2-production.md). Real local PF A/PF B behavior is verified in the [separate container harness](pingfederate-containers.md). Production approval remains **UNVERIFIED**; the default HTTP demo still uses mocks.
 
 Reference: https://docs.pingidentity.com/pingfederate/13.0/administrators_reference_guide/pf_oauth_exchange.html
 
