@@ -1,4 +1,8 @@
-# Microsoft Copilot Studio Integration (UNVERIFIED live tenant)
+# Microsoft Copilot Studio Integration
+
+The [interactive real-tenant PoC](copilot-interactive-tool-success.md) now verifies Generic OAuth sign-in and a Copilot-originated delegated diagnostic through the Vault-backed relay, real PF A/B and private Docker tool. The original human, acting agent, organisation, grant, mode, resource and audience were independently audited, and cleanup passed. Autonomous Copilot SSO and live Microsoft expiry/revocation behavior remain UNVERIFIED; Graph is not connected. The default local demo remains isolated.
+
+The [Direct Line adapter and HTTPS API factory](direct-line-adapter.md) also have local contract/negative tests for conversation binding, separate credentials, controlled token posting, expiry/revocation and secret injection. Local contract tests alone do not establish further tenant behavior. The current provider connector header is PfUserAccessToken; caller connection authentication uses X-Copilot-Connection-Key.
 
 Sources:
 - https://learn.microsoft.com/en-us/microsoft-copilot-studio/configure-sso-3p
@@ -17,7 +21,7 @@ Sources:
 
 The documented custom Direct Line client flow receives OAuthCard attachments (`application/vnd.microsoft.card.oauth`), reads `content.tokenPostResource.sasUrl`, POSTs `{ "token": "<approved user token>" }` to the secure URL, then Copilot exposes the token in `System.User.AccessToken`.
 
-**Validate in a real environment** that a correctly issued PingFederate B token from your token-exchange architecture is accepted, that the token is available to a protected HTTP tool, and that the custom *autonomous* flow can establish a session without illicit interactive impersonation. Also validate Power Platform data policies, licensing, tool connection credentials and refresh behavior. This product-specific behaviour is not implemented or verified by the demo.
+**Validate in a real environment** that a separately audienced PingFederate B SSO/tool token is accepted, reaches a protected HTTP tool, and allows the custom *autonomous* flow without illicit interactive impersonation. Also validate Power Platform data policies, licensing, tool connection credentials and refresh behavior. The adapter implements the documented POST protocol, but product acceptance remains UNVERIFIED. Do not forward the incoming broker-audience token as an SSO token or interpret HTTP POST success as authenticated tool access.
 
 Do not treat an accepted OAuth token as proof that Copilot natively understands the `act` claim. The broker, not the model, must verify and enforce the original agent delegation.
 

@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "status": "DRAFT_NOT_DEPLOYABLE",
+  "deploymentEnabled": false,
+  "scope": "read-only authorization diagnostic",
+  "hostingProposal": {
+    "platform": "existing-windows-host-with-isolated-linux-container",
+    "selectionConfirmed": true,
+    "hostPortBinding": {
+      "address": "127.0.0.1",
+      "port": 9480
+    },
+    "containerListener": {
+      "address": "0.0.0.0",
+      "port": 8443,
+      "protocol": "https-mtls"
+    },
+    "imageDigest": null,
+    "runtimeEntrypoint": "src/copilot/tool-main.ts",
+    "runAsNonRoot": true,
+    "readOnlyRootFilesystem": true,
+    "dropAllCapabilities": true,
+    "noNewPrivileges": true,
+    "dockerSocketMount": false,
+    "hostWorkspaceMount": false,
+    "localImageId": "sha256:421001fbd01d907e287a141e59f80fbaa475ea5f3b1138e32ec42d201916fb98"
+  },
+  "ingress": {
+    "publicRoutes": [],
+    "cloudflareChanges": false,
+    "callingWorkload": null,
+    "callerToGatewayAuthentication": null,
+    "tlsTermination": "tool-process",
+    "forwardedCertificateHeadersTrusted": false,
+    "clientCertificateSha256": [],
+    "route": {
+      "method": "POST",
+      "path": "/v1/tools/verify-access",
+      "contentType": "application/json",
+      "body": {}
+    }
+  },
+  "delegatedTrust": {
+    "adapter": "jose-jwks-with-independent-online-policy",
+    "mockFallback": false,
+    "issuer": null,
+    "jwksUri": null,
+    "audience": "api://copilot-tool",
+    "scope": "copilot.invoke",
+    "algorithms": [
+      "RS256"
+    ],
+    "keyIds": [],
+    "organisations": [],
+    "actorIssuers": [],
+    "maxTokenLifetimeSeconds": 120,
+    "capabilityResource": "sharepoint:approved-research",
+    "resourceBindingConfirmed": false,
+    "policyOrigin": null,
+    "policyWorkloadId": null,
+    "policyWorkloadKeyId": null,
+    "requirePolicyBeforeAndAfterOperation": true
+  },
+  "secretMountProposals": {
+    "toolServerKey": "/run/secrets/tool-server-key.pem",
+    "toolServerCertificate": "/run/secrets/tool-server-cert.pem",
+    "workloadClientCA": "/run/secrets/tool-client-ca.pem",
+    "outboundTrustCA": "/run/secrets/tool-outbound-ca.pem",
+    "policySigningKey": "/run/secrets/tool-policy-key.pem",
+    "custodyProvider": "local-vault-kv2-certificate-renderer",
+    "readOnly": true,
+    "mountPfAdminCredentials": false,
+    "mountVaultOperatorCredentials": false,
+    "mountDirectLineSecret": false,
+    "mountConsentSigningKey": false,
+    "auditHmacKey": "/run/secrets/tool-audit-key"
+  },
+  "egress": {
+    "defaultDeny": true,
+    "approvedDestinations": [],
+    "dnsResolver": null,
+    "microsoftChannelAccess": false,
+    "graphAccess": false,
+    "pfAdministrationAccess": false,
+    "vaultOperatorAccess": false
+  },
+  "runtimeLimits": {
+    "bodyBytes": 1024,
+    "headerBytes": 20000,
+    "headerCount": 32,
+    "headerTimeoutMs": 5000,
+    "requestTimeoutMs": 10000,
+    "toolDeadlineMs": 5000,
+    "policyTimeoutMs": 1500,
+    "jwksTimeoutMs": 1500,
+    "postRetries": 0,
+    "maxConcurrentRequests": 16,
+    "perWorkloadRateLimit": {
+      "requestsPerMinute": 60,
+      "burst": 60,
+      "identity": "client-certificate-sha256"
+    },
+    "cpuLimit": 0.5,
+    "memoryLimit": "256MiB",
+    "maxConnections": 128
+  },
+  "operations": {
+    "readinessImplementation": "pinned-mtls-GET-/health/ready",
+    "telemetrySink": "local-stdout-fixed-schema",
+    "auditRetentionDays": null,
+    "operationalOwner": null,
+    "certificateRotation": "reviewed-overlap-drain-replace-retire",
+    "hotTrustReload": false,
+    "logRequestBodies": false,
+    "logAuthorizationHeaders": false,
+    "logSignedUrls": false,
+    "logTranscriptTokens": false,
+    "allowCredentialRollback": false,
+    "smokeFixture": "synthetic-data-only",
+    "auditDirectory": "/var/lib/tool-audit",
+    "auditMode": "required-pseudonymous-bounded-jsonl",
+    "auditMaxBytes": 1048576,
+    "auditRetainedFiles": 2,
+    "metricsEndpoint": "/health/metrics",
+    "externalAlertDestination": null
+  },
+  "externalDependencies": {
+    "copilotTokenPost": "UNVERIFIED_HTTP_400",
+    "copilotCallerAuthentication": "UNVERIFIED",
+    "graphSharePoint": "NOT_CONNECTED"
+  }
+}

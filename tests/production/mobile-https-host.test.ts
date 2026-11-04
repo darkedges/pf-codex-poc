@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {request} from 'node:https';
+import {mkdtempSync,readFileSync,rmSync} from 'node:fs';import {join,dirname,basename} from 'node:path';import {tmpdir} from 'node:os';import {execFileSync} from 'node:child_process';
+import {startMobileHttpsHost} from '../../src/mobile/https-host.ts';
+test('loopback HTTPS host preserves signed bytes and publishes only the fixed Android association',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'mobile-https-host-'));let host;try{
+  const key=join(dir,'key.pem'),cert=join(dir,'cert.pem');execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',key,'-out',cert,'-subj','/CN=agent.example.test','-addext','subjectAltName=DNS:agent.example.test','-days','1'],{stdio:'ignore',windowsHide:true,timeout:15000});const pem=readFileSync(cert,'utf8');let calls=0;
+  host=await startMobileHttpsHost({origin:'https://agent.example.test',port:0,tls:{key:readFileSync(key,'utf8'),cert:pem},androidCertificateSha256:'01'.repeat(32)},{handle:async r=>{calls++;assert.equal(r.url,'https://agent.example.test/v1/mobile/chat/messages');assert.equal(r.headers.get('x-mobile-proof'),'synthetic-proof');assert.equal(await r.text(),'{"question":"Exact bytes"}');return Response.json({status:'pending',jobId:'a'.repeat(43)},{status:202});}});assert.equal(host.host,'127.0.0.1');
+  const get=(path,method='GET',body='',hostname='agent.example.test')=>new Promise((done,fail)=>{const req=request({hostname:'127.0.0.1',servername:'agent.example.test',port:host.port,ca:pem,path,method,headers:{Host:hostname,'Content-Type':'application/json','X-Mobile-Proof':'synthetic-proof'}},res=>{let raw='';res.on('data',c=>raw+=c);res.on('end',()=>done({status:res.statusCode,raw}));});req.on('error',fail);req.end(body);});
+  const association=await get('/.well-known/assetlinks.json');assert.equal(association.status,200);assert.equal(JSON.parse(association.raw)[0].target.package_name,'com.darkedges.federatedcopilot.demo');
+  assert.equal((await get('/v1/mobile/chat/messages','POST','{"question":"Exact bytes"}')).status,202);assert.equal(calls,1);assert.equal((await get('/','GET','','evil.test')).status,400);assert.equal(calls,1);
+ }finally{await host?.stop();assert.equal(dirname(dir),tmpdir());assert.ok(basename(dir).startsWith('mobile-https-host-'));rmSync(dir,{recursive:true,force:true});}
+});

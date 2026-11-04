@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {backendRoute} from '../scripts/pf/tool-backend-route.mjs';
+test('private lab bridge exposes only public JWKS and signed decision paths',()=>{assert.equal(backendRoute('GET','/pf/JWKS'),'jwks');assert.equal(backendRoute('POST','/v1/decisions'),'decision');assert.equal(backendRoute('POST','/v1/health'),'health');});
+for(const [method,path]of [['GET','/pf-admin-api/v1/version'],['POST','/as/token.oauth2'],['POST','/v1/grants'],['GET','/pf/JWKS?target=admin'],['POST','/v1/decisions?origin=other'],['GET','https://evil.test/pf/JWKS'],['GET','/pf/%4aWKS'],['GET','/v1/decisions']])test('private bridge refuses administrative, token, encoded and arbitrary destinations',()=>assert.equal(backendRoute(method,path),undefined));

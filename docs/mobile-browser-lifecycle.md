@@ -1,0 +1,33 @@
+# Mobile browser lifecycle and live-preview client
+
+Status: **locally verified source and build; physical live sign-in UNVERIFIED**. The installed v4 device test is unchanged. No browser was launched on the phone, no live key enrolled, no public service/association/PF callback changed and no Microsoft request made.
+
+## Native custody and browser launch
+
+`BrowserLoginPlugin` uses `PendingLogin` to hold one random 32-byte claim secret only in native process memory. Public status contains its SHA-256 claim hash, device public key, random attempt ID and remaining duration. The five-minute deadline uses Android monotonic elapsed time and never slides. Consumption is one-use; secret bytes are cleared on consumption/cancellation/expiry/destruction. Activity stop intentionally preserves a browser sign-in; activity destruction/process loss requires fresh sign-in. No provider token, session key, secret or user identity is stored in preferences.
+
+The system browser is resolved through Android's browser selector, then explicitly targeted by package. `BrowserPolicy` allows only PF A's HTTPS authorization path with the two PAR parameters (`client_id`, URN `request_uri`). Credentials, alternate hosts/ports/paths, duplicate parameters, non-URN requests and fragments are rejected. No embedded WebView or credential form is used. A missing/default-browser ambiguity gives a fixed error and ends the attempt. Resolver behavior on the actual phone remains a physical acceptance check. Android's [Intent/browser selector reference](https://developer.android.com/reference/android/content/Intent) informed the launcher; no additional browser SDK/dependency was added.
+
+Native return consumption independently validates the exact agent HTTPS host, `/mobile/return`, and one canonical opaque handoff. It requires the same pending attempt and live device key. Stale calls cannot erase a newer attempt. The claim secret reaches JavaScript only for the one-use HTTPS claim, never in a return URL, snapshot or log. Pending state is not restored from disk.
+
+The only persistent native metadata is enrollment ID and absolute expiry, in app-private preferences excluded from backup/transfer. The ID must equal the hash of the current live public key; it grants nothing without online policy and signed proofs. Saving rejects past/over-30-day deadlines. Local reset clears this reference and deletes only the live key alias; it does not touch the device-test key. **Local reset is not server revocation.** Explicit fresh sign-in can recover after invalidation; server-side revocation and owned stale-device lifecycle remain part of the real authority/runtime integration.
+
+Both global and Android Capacitor bridge logging are explicitly disabled, as is WebView debugging. This prevents framework plugin-call diagnostics from recording return links/proofs. Existing fixed `FCDevicePolicy` diagnostics contain only key-policy booleans/enums, never key bytes, user identifiers, handoffs or messages. Android lint found an API33-only URLDecoder overload in the first build; it was replaced with the compatible UTF-8 overload without raising minSDK or suppressing lint.
+
+## Controller and UI
+
+`MobileAppController` composes the existing real session signer and HTTPS transport with native browser custody. It checks native key availability before browser launch, claims the return only after foregrounding, binds a fresh ephemeral request key, and records only the returned enrollment reference. Unlock resumes the exact existing enrollment/absolute expiry. Every successful enrollment/unlock opens an empty, newly identified chat. Messages are memory-only and cleared on background/lock/error.
+
+Generation checks reject late returns, pending-status reads and server responses after cancellation/backgrounding. Duplicate return events cannot create two active completions. A browser departure preserves only its pending native login; backgrounding during enrollment/chat cancels requests, pending prompts and foreground signing authority. Failed credential-bearing operations and chat calls are not automatically retried. Snapshots expose no secrets, provider URLs, trusted identity, proof headers or enrollment credentials.
+
+`LiveApp.tsx` now wires this controller to sign-in, fingerprint unlock, new-chat messaging, lock and explicit sign-in recovery. It attaches return listeners only during pending browser sign-in and deliberately ignores an old original launch Intent, preventing a prior return link from consuming a new attempt. Browser/phone cold start without pending native custody requires new sign-in. The normal device-test entry remains available and unchanged.
+
+Build selection is explicit: absent `VITE_MOBILE_MODE` means `device-test`; `live` builds the live-preview entry with only the fixed agent API added to CSP. Unknown modes fail the build. Live mode never falls back to local test replies. Hosts/issuers cannot be chosen by a prompt or app request. The preview labels its dependency and PoC trace limits; the real server executor remains absent until independently authorized delegation is connected. This is device enrollment, not automatic creation of a Microsoft 365 resource grant.
+
+## Verification
+
+- 827 backend production tests pass, including the actual live controller → HTTP client → API handler → JOSE verifier → durable enrollment/request authority round trip, empty-chat resume and revocation denial. Device hardware, browser/PF transport and final answer execution are explicit test fixtures, not live-service evidence.
+- 32 mobile tests pass, including cancellation races, stale/foreign/duplicate returns, private snapshots, no-retry failure, unchanged enrollment expiry, explicit live/test mode and bridge logging policy.
+- Twelve native unit tests cover local/live signing purpose, per-use key policy, one-use secret/hash custody, monotonic expiry and browser/return restrictions. Native assemble/lint and web typecheck/build pass; physical browser/default selection, native preference recovery and new live UI are still unverified on-device.
+
+The intermediate live-preview APK retains the existing debug package/version and is **not a promoted delivery artifact**. Do not replace the immutable delivered v4 receipt or install this as a working live integration. Public routing/association, PF callback/client review, authoritative resumed delegation/hardware-assurance policy, real multi-turn/document executor and supervised persistent hosting remain the next integration gates. The existing 372-test simulation checkpoint remains unchanged; no simulation interface changed in this milestone.

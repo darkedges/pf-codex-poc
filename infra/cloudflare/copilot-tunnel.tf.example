@@ -1,0 +1,29 @@
+# DISABLED DNS-ONLY fragment for the existing cloudflare-ssl root module.
+# Dedicated tunnel ALREADY EXISTS and is locally managed on DARKEDGES.
+# Do not recreate it or change config_src. Requires var.zone_id. NOT APPLIED.
+variable "copilot_public_routes_enabled" {
+  type    = bool
+  default = false
+}
+variable "copilot_existing_tunnel_id" {
+  type    = string
+  default = "a979d27b-f2cd-45cf-aada-b44c850e3a0e"
+}
+locals {
+  copilot_pf_hostnames = toset([
+    "pf-a.copilot.darkedges.com",
+    "pf-b.copilot.darkedges.com",
+  ])
+}
+resource "cloudflare_dns_record" "federated_copilot" {
+  for_each = var.copilot_public_routes_enabled ? local.copilot_pf_hostnames : toset([])
+  zone_id  = var.zone_id
+  name     = each.value
+  type     = "CNAME"
+  content  = "${var.copilot_existing_tunnel_id}.cfargotunnel.com"
+  proxied  = true
+  ttl      = 1
+}
+# Active local ingress remains deny-all. Review PF public profiles, edge TLS
+# and runtime paths before approving DNS AND a separate local ingress change.
+# No tunnel credentials, remote tunnel config or certificate resources here.

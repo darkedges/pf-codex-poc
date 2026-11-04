@@ -1,0 +1,18 @@
+import { importPKCS8 } from 'jose';
+import { OidcClient } from '../../src/identity/oidc.ts';
+import { PolicyClient } from '../../src/policy/client.ts';
+import { ConsentPortal } from '../../src/consent/portal.ts';
+import { createConsentServer } from '../../src/consent/server.ts';
+import { load,read } from './common.mjs';
+import { capability } from './policy-setup.ts';
+import { runConsentedExchange } from './consent-exchange.ts';
+const port=Number(process.env.CONSENT_PORT??9460);
+if(![9460,9461].includes(port)||!process.env.POLICY_API_ORIGIN||process.env.NODE_TLS_REJECT_UNAUTHORIZED==='0')throw Error('Consent service requires approved local port, authenticated policy origin and TLS verification');
+const origin=`https://localhost:${port}`;
+const oidc=new OidcClient({...load('oidc-config.json'),redirectUri:origin+'/callback',clientKey:await importPKCS8(read('consent-oidc.private.pem'),'RS256')});
+const policy=new PolicyClient({origin:process.env.POLICY_API_ORIGIN,clientId:'policy-consent',keyId:'copilot-policy-consent',key:await importPKCS8(read('policy-consent.private.pem'),'RS256'),capability,timeoutMs:5000});
+const portal=new ConsentPortal({origin,capability,oidc,policy,execute:(grantId,mode,login)=>runConsentedExchange(grantId,mode,login)});
+const server=createConsentServer({key:read('localhost-key.pem'),cert:read('localhost.pem')},portal);
+server.on('error',()=>{console.error('Consent HTTPS listener unavailable');process.exitCode=1;});
+server.listen(port,'127.0.0.1',()=>{if(process.send)process.send({ready:true,origin});else console.log(`Consent portal listening at ${origin}`);});
+const stop=()=>{server.close(()=>process.exit(0));server.closeAllConnections();};process.on('disconnect',stop);process.on('SIGINT',stop);process.on('SIGTERM',stop);

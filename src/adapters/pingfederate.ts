@@ -7,13 +7,13 @@ export type IssuerTrust = {
   organisations: string[]; actorIssuers: string[]; maxLifetimeSeconds: number;
 };
 export type PingFederateConfig = {
-  upstream: IssuerTrust[]; downstream: IssuerTrust; tokenEndpoint: string;
-  clientId: string; clientKeyId: string; clientAlgorithm: string; scope: string; timeoutMs: number;
+  upstream: IssuerTrust[]; downstream: IssuerTrust; tokenEndpoint: string; targetParameter?: 'audience' | 'resource'; requestedResource?:string;
+  clientId: string; clientKeyId: string; clientAlgorithm: string; clientAssertionAudience?: string; scope: string; timeoutMs: number;
 };
 export type Dependencies = {
   clientKey: CryptoKey;
   // Must consult authoritative current grant, organisation and agent state. Never a chat/header claim.
-  authorise: (claims: Readonly<DelegatedClaims>) => Promise<void>;
+  authorise: (claims: Readonly<DelegatedClaims>, evidence?: { accessToken:string }) => Promise<void>;
   fetch?: typeof fetch;
   observe?: (event: { event: 'pf_b_exchange'; outcome: 'success' | 'failure'; code?: string; durationMs: number }) => void;
 };
@@ -94,6 +94,9 @@ export class PingFederateExchange implements TokenExchanger {
       this.config = structuredClone(config);
       this.deps = { ...dependencies };
       https(config.tokenEndpoint);
+      if (config.clientAssertionAudience !== undefined) https(config.clientAssertionAudience);
+      if (config.targetParameter !== undefined && !['audience','resource'].includes(config.targetParameter)) throw Error();
+      if(config.requestedResource!==undefined){const resource=new URL(config.requestedResource);if(config.targetParameter!=='resource'||!['https:','api:','urn:'].includes(resource.protocol)||resource.username||resource.password||resource.search||resource.hash||config.requestedResource.length>2048)throw Error();}
       if (!config.upstream.length || new Set(config.upstream.map(t => t.issuer)).size !== config.upstream.length ||
           !text(config.clientId) || !text(config.clientKeyId) || !algorithms.includes(config.clientAlgorithm) ||
           !text(config.scope) || /\s/.test(config.scope) || !Number.isInteger(config.timeoutMs) || config.timeoutMs < 100 || config.timeoutMs > 30000 ||
@@ -102,11 +105,11 @@ export class PingFederateExchange implements TokenExchanger {
       this.outgoing = new JwksTokenVerifier([this.config.downstream], config.scope, config.timeoutMs, dependencies.fetch);
     } catch { throw new ExchangeError('configuration'); }
   }
-  private async policy(claims: DelegatedClaims) {
+  private async policy(claims: DelegatedClaims,accessToken:string) {
     try {
       // A timeout also applies to the required online policy call. Copy prevents mutation of verified claims.
       let timer: ReturnType<typeof setTimeout> | undefined;
-      try { await Promise.race([this.deps.authorise(structuredClone(claims)), new Promise((_, reject) => { timer = setTimeout(() => reject(Error()), this.config.timeoutMs); })]); }
+      try { await Promise.race([this.deps.authorise(structuredClone(claims),{accessToken}), new Promise((_, reject) => { timer = setTimeout(() => reject(Error()), this.config.timeoutMs); })]); }
       finally { clearTimeout(timer); }
     } catch { throw new ExchangeError('policy_denied'); }
   }
@@ -117,17 +120,17 @@ export class PingFederateExchange implements TokenExchanger {
     };
     try {
       const original = await this.incoming.verify(token);
-      await this.policy(original);
+      await this.policy(original,token);
       const c = this.config;
-      const assertion = await new SignJWT({}).setProtectedHeader({ alg: c.clientAlgorithm, kid: c.clientKeyId, typ: 'JWT' })
-        .setIssuer(c.clientId).setSubject(c.clientId).setAudience(c.tokenEndpoint).setIssuedAt()
+      const assertion = await new SignJWT({}).setProtectedHeader({ alg: c.clientAlgorithm, kid: c.clientKeyId, typ: 'client-authentication+jwt' })
+        .setIssuer(c.clientId).setSubject(c.clientId).setAudience(c.clientAssertionAudience ?? c.tokenEndpoint).setIssuedAt()
         .setExpirationTime('60s').setJti(randomUUID()).sign(this.deps.clientKey);
       const response = await (this.deps.fetch ?? fetch)(c.tokenEndpoint, {
         method: 'POST', redirect: 'error', signal: AbortSignal.timeout(c.timeoutMs),
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
         body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
           subject_token: token, subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
-          requested_token_type: 'urn:ietf:params:oauth:token-type:access_token', audience: c.downstream.audience,
+          requested_token_type: 'urn:ietf:params:oauth:token-type:access_token', [c.targetParameter ?? 'audience']: c.requestedResource??c.downstream.audience,
           scope: c.scope, client_id: c.clientId, client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer', client_assertion: assertion }),
       });
       if (!response.ok) throw new ExchangeError('exchange_failed');
@@ -146,7 +149,7 @@ export class PingFederateExchange implements TokenExchanger {
         if (claims[key] !== original[key]) throw new ExchangeError('invalid_token');
       }
       if (claims.act.sub !== original.act.sub || claims.act.iss !== original.act.iss || claims.exp > original.exp) throw new ExchangeError('invalid_token');
-      await this.policy(claims);
+      await this.policy(claims,result.access_token);
       // Do not release a token that expired while online checks were running.
       if (Math.min(claims.exp, original.exp) <= Math.floor(Date.now() / 1000)) throw new ExchangeError('invalid_token');
       observe('success');

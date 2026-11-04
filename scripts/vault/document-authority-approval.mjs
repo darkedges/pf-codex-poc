@@ -1,0 +1,7 @@
+import {resolve} from 'node:path';import {root} from '../pf/common.mjs';
+import {checkedBytes,digest} from './document-exchange-approval.mjs';
+export const documentAuthorityFiles=['docs/document-authority-custody-review.md','scripts/vault/enroll-document-authority.mjs','scripts/vault/document-authority-approval.mjs','scripts/vault/prepare-document-authority-review.mjs','scripts/vault/document-authority-roles.mjs','src/m365/document-authority-custody.mjs','scripts/vault/document-exchange-approval.mjs','scripts/vault/common.mjs','scripts/pf/common.mjs','scripts/vault/tool-custody.mjs','scripts/vault/protect-tool-directory.ps1'];
+export function assertDocumentAuthorityApproval(){
+ const dir=resolve(root,'.local/tool-vault/document-authority-review'),bytes=checkedBytes(resolve(dir,'manifest.json')),m=JSON.parse(bytes),a=JSON.parse(checkedBytes(resolve(dir,'owner-approval.json')));
+ if(m.schemaVersion!==1||m.purpose!=='document-authority-vault-enrollment'||m.transitKey!=='document-authority'||m.microsoftRequests!==0||m.pfMutations!==0||m.grantAssertionsIssued!==0||Object.keys(m.files??{}).sort().join()!==[...documentAuthorityFiles].sort().join()||documentAuthorityFiles.some(f=>m.files[f]!==digest(checkedBytes(resolve(root,f))))||a.approved!==true||a.answer!=='Approve document authority credential enrollment'||a.manifestSha256!==digest(bytes)||!Number.isSafeInteger(a.approvedAt)||a.approvedAt>Date.now()+5000||Date.now()-a.approvedAt>86400000)throw Error('Exact document authority credential approval missing or drifted');return m;
+}

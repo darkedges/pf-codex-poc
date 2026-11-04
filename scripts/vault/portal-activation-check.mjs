@@ -1,0 +1,2 @@
+import {readPortalActivation} from './portal-activation.mjs';
+try{const arg=process.argv.slice(2).join();if(!['--check','--rollback'].includes(arg))throw Error();const {manifest}=readPortalActivation({rollback:arg==='--rollback'});console.log(JSON.stringify({approved:true,scope:manifest.scope,reviewSha256:manifest.reviewSha256,hostname:manifest.hostname,maxConversations:1,maxTokenPosts:1,changesApplied:false}));}catch{console.error('Exact portal activation approval or reviewed files missing/drifted. No change applied.');process.exitCode=1;}

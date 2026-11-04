@@ -1,0 +1,10 @@
+# REVIEW ONLY: insert before the existing terminal deny rule; do not apply without approval.
+  - hostname: relay.copilot.darkedges.com
+    path: "^/v1/copilot-tools/verify-access$"
+    service: https://127.0.0.1:9464
+    originRequest:
+      originServerName: localhost
+      caPool: 'E:/development/projects/copilot/federated-copilot-codex/.local/cloudflare-connector/relay-origin-ca.pem'
+      noTLSVerify: false
+  - hostname: relay.copilot.darkedges.com
+    service: http_status:404

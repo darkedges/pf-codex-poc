@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "trust": {
+    "issuer": null,
+    "jwksUri": null,
+    "audience": "api://copilot-tool",
+    "algorithms": [
+      "RS256"
+    ],
+    "keyIds": [],
+    "organisations": [],
+    "actorIssuers": [],
+    "maxLifetimeSeconds": 120
+  },
+  "policy": {
+    "origin": null,
+    "clientId": null,
+    "keyId": null
+  },
+  "clientCertificateSha256": [],
+  "timeouts": {
+    "jwksMs": 1500,
+    "policyMs": 1500,
+    "toolMs": 5000
+  },
+  "admission": {
+    "maxConcurrentRequests": 16,
+    "perWorkloadRequestsPerMinute": 60,
+    "maxConnections": 128
+  }
+}

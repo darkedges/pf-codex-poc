@@ -1,0 +1,2 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {toolPolicyLease} from '../../scripts/vault/policy-lease-options.mjs';
+test('existing policy lease default is preserved and chat can select only a shorter fixed hour',()=>{assert.equal(toolPolicyLease(),'8h');assert.equal(toolPolicyLease(28800),'8h');assert.equal(toolPolicyLease(3600),'1h');for(const value of [0,3601,86400,Infinity,'1h',-1])assert.throws(()=>toolPolicyLease(value));});

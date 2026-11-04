@@ -1,0 +1,39 @@
+name: federated-copilot-tool
+services:
+  tool:
+    image: ${TOOL_IMAGE:?Explicit reviewed local image ID or immutable registry digest required}
+    user: "1000:1000"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    init: true
+    restart: "no"
+    ports:
+      - "127.0.0.1:9480:8443"
+    cpus: 0.5
+    mem_limit: 256m
+    pids_limit: 64
+    stop_grace_period: 7s
+    volumes:
+      - type: bind
+        source: ${TOOL_CONFIG_SOURCE:?Explicit absolute runtime config file required}
+        target: /run/config/tool-runtime.json
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${TOOL_SECRET_SOURCE:?Explicit dedicated secret mount directory required}
+        target: /run/secrets
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${TOOL_AUDIT_SOURCE:?Explicit dedicated restricted audit directory required}
+        target: /var/lib/tool-audit
+        read_only: false
+        bind: {create_host_path: false}
+    networks: [private]
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "2"}
+networks:
+  private:
+    internal: true

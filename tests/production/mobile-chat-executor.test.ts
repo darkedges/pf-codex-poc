@@ -1,0 +1,20 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {MobileChatExecutor} from '../../src/mobile/chat-executor.ts';
+function fixture(){
+ let changed=false,revoked=false,opens=0,disposals=0,issues=0;const sent=[],valid=new WeakSet();
+ const evidence=(sessionId='session')=>{const e={sessionId,enrollmentId:'device',consentId:'consent',enrollmentExpiresAt:Date.now()+86400000,human:{issuer:'https://login.example.test',subject:'human',audience:'mobile',authTime:Date.now()-3600000},agent:{issuer:'https://agents.example.test',subject:'agent'},organisation:'org',expiresAt:Date.now()+60000};valid.add(e);return e;};
+ const claims=e=>({iss:'https://pf-b.example.test',aud:'api://copilot-broker',sub:e.human.subject,act:{iss:e.agent.issuer,sub:e.agent.subject},org_id:e.organisation,delegation_id:'chat-grant',execution_mode:'interactive',scope:'copilot.invoke',resource:'sharepoint:approved-research',original_login_issuer:e.human.issuer,original_login_audience:e.human.audience,original_auth_time:Math.floor(e.human.authTime/1000),exp:Math.floor(Date.now()/1000)+60});
+ const tokens=new Map();
+ const executor=new MobileChatExecutor({capacity:4,foregroundMs:900000,pollIntervalMs:1},{revalidate:async e=>{if(!valid.has(e)||revoked)throw Error('private authority');return structuredClone(e);},readDocuments:async()=>({documents:[{name:'approved.txt',text:'The answer is teal.'}],unsupportedCount:0,fingerprint:(changed?'b':'a').repeat(64)}),issueChat:async(e)=>{issues++;const accessToken='synthetic-proof-'+issues;tokens.set(accessToken,claims(e));return{accessToken,claims:claims(e)};},authoriseChat:async token=>{if(revoked)throw Error('revoked');return tokens.get(token);},createAdapter:()=>{let authenticated=false,last='';return{adapter:{open:async()=>{opens++;return{handle:'handle',state:'awaiting_oauth',expiresAt:Date.now()+900000};},send:async(h,t,text)=>{sent.push(text);last=text;return{submitted:true};},poll:async()=>{if(!authenticated){authenticated=true;return{state:'token_posted',messages:[{id:'auth',text:'Authentication status: signed in. Copilot reports User.IsLoggedIn=true. Delegated tool access has not been verified.'}]};}return{state:'token_posted',messages:[{id:'answer',text:'The answer is teal. (approved.txt)'}]};},close:async()=>({closed:true}),refresh:async()=>{throw Error('unused');}},dispose:()=>{disposals++;}};}});
+ return{executor,evidence,sent,opens:()=>opens,disposals:()=>disposals,issues:()=>issues,change:()=>changed=true,revoke:()=>revoked=true};
+}
+test('foreground multi-turn chat reuses its conversation but obtains fresh current proof each turn',async()=>{
+ const f=fixture();try{for(let i=0;i<2;i++)assert.equal((await f.executor.execute({evidence:f.evidence(),question:'What colour?',signal:new AbortController().signal})).answer,'The answer is teal. (approved.txt)');assert.equal(f.opens(),1);assert.equal(f.issues(),2);assert.equal(f.sent.length,3);assert.match(f.sent[1],/untrusted data/);}finally{f.executor.close();}assert.equal(f.disposals(),1);
+});
+test('a fresh foreground starts an empty remote conversation and disposes the old association',async()=>{
+ const f=fixture();try{for(const session of ['first','second'])await f.executor.execute({evidence:f.evidence(session),question:'Question',signal:new AbortController().signal});assert.equal(f.opens(),2);assert.equal(f.disposals(),1);}finally{f.executor.close();}
+});
+test('changed grounding or revoked authority cannot submit a new question into stale context',async()=>{
+ const f=fixture();await f.executor.execute({evidence:f.evidence(),question:'Question',signal:new AbortController().signal});const sends=f.sent.length;f.change();await assert.rejects(f.executor.execute({evidence:f.evidence(),question:'Question',signal:new AbortController().signal}));assert.equal(f.sent.length,sends);f.executor.close();
+ const g=fixture();g.revoke();await assert.rejects(g.executor.execute({evidence:g.evidence(),question:'Question',signal:new AbortController().signal}));assert.equal(g.opens(),0);g.executor.close();
+});

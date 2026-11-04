@@ -1,0 +1,27 @@
+mcs.metadata:
+  componentName: Federation sign-in status
+  description: Checks the runtime sign-in flag without displaying credentials or granting tool access.
+kind: AdaptiveDialog
+startBehavior: CancelOtherTopics
+beginDialog:
+  kind: OnActivity
+  id: main
+  type: Message
+  priority: -1
+  condition: =Lower(Trim(System.Activity.Text)) = "/federation-status" Or Lower(Trim(System.Activity.Text)) = "verify federated sign in" Or Lower(Trim(System.Activity.Text)) = "check federation sign in status"
+  actions:
+    - kind: ConditionGroup
+      id: check_runtime_signin
+      conditions:
+        - id: runtime_signed_in
+          condition: =System.User.IsLoggedIn = true
+          actions:
+            - kind: SendActivity
+              id: report_signed_in
+              activity: "Authentication status: signed in. Copilot reports User.IsLoggedIn=true. Delegated tool access has not been verified."
+      elseActions:
+        - kind: SendActivity
+          id: report_not_signed_in
+          activity: "Authentication status: not signed in or unavailable. Copilot has not reported User.IsLoggedIn=true. Delegated tool access has not been verified."
+    - kind: CancelAllDialogs
+      id: finish_status_check

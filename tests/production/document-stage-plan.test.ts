@@ -1,0 +1,6 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {generateKeyPairSync} from 'node:crypto';
+import {documentStagePlan} from '../../scripts/pf/document-stage-plan.mjs';
+const {publicKey}=generateKeyPairSync('rsa',{modulusLength:2048}),jwks={keys:[{...publicKey.export({format:'jwk'}),kid:'synthetic',alg:'RS256',use:'sig'}]};
+const material={authority:jwks,agent:jwks,upstream:jwks,clientA:jwks,clientB:jwks};
+test('offline staging plan lists only dedicated objects and never enables a client',()=>{const p=documentStagePlan(material);assert.equal(p.readyToApply,false);assert.equal(p.tokenRequests,0);assert.equal(p.microsoftRequests,0);for(const op of p.operations){assert.ok(['a','b'].includes(op.node));assert.ok(!/authServerSettings|scopes|consent|copilot[A-Z]/.test(op.path));if(op.path.includes('oauth/clients'))assert.equal(op.body.enabled,false);if(op.method==='PUT')assert.match(op.path,/\/document-gateway-[12]$/);}assert.equal(p.operations.filter(o=>o.path.endsWith('keyPairs/signing/generate')).length,2);});
+test('staging key input is independently validated and arbitrary target fields are refused',()=>{assert.throws(()=>documentStagePlan({...material,node:'foreign'}));assert.throws(()=>documentStagePlan({...material,clientA:{keys:[{...jwks.keys[0],d:'private'}]}}));});

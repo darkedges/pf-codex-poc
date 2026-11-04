@@ -1,0 +1,5 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {waitForVerifiedTokenActivation} from '../../src/m365/verified-token-activation.ts';
+const claims=(patch={})=>({iat:Math.floor(Date.now()/1000),nbf:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+30,...patch}) as any;
+test('already active verified token proceeds without an added skew allowance',async()=>{await waitForVerifiedTokenActivation(claims(),AbortSignal.timeout(100));});
+test('verified small clock skew waits until strict activation time',async()=>{const future=Math.floor(Date.now()/1000)+1;await waitForVerifiedTokenActivation(claims({iat:future,nbf:future}),AbortSignal.timeout(2000));assert.ok(Date.now()>=future*1000);});
+test('large future time, expiry and cancellation fail closed',async()=>{const now=Math.floor(Date.now()/1000);for(const p of [{nbf:now+10},{exp:now-1},{exp:now+1,nbf:now+2},{iat:NaN}])await assert.rejects(waitForVerifiedTokenActivation(claims(p),AbortSignal.timeout(100)));await assert.rejects(waitForVerifiedTokenActivation(claims({nbf:now+2}),AbortSignal.abort()));});

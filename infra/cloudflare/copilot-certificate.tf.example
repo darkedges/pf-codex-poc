@@ -1,0 +1,20 @@
+# OPTIONAL DISABLED candidate, only if no existing Active certificate covers
+# *.copilot.darkedges.com. Requires reviewed ACM entitlement/cost and var.zone_id.
+# Never edit/replace the existing shared edge_current / edge_next certificate packs.
+variable "copilot_certificate_enabled" {
+  type    = bool
+  default = false
+}
+resource "cloudflare_certificate_pack" "copilot_edge" {
+  count                 = var.copilot_certificate_enabled ? 1 : 0
+  zone_id               = var.zone_id
+  type                  = "advanced"
+  hosts                 = ["darkedges.com", "*.copilot.darkedges.com"]
+  certificate_authority = "google"
+  validation_method     = "txt"
+  validity_days         = 90
+  cloudflare_branding   = false
+  lifecycle {
+    create_before_destroy = true
+  }
+}

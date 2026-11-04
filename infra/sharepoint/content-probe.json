@@ -1,0 +1,17 @@
+{
+  "runId": "248c3515-6612-486f-aa12-7b7c70746063",
+  "tenantId": "4161be3f-bf2b-41d4-a02b-e6f82b529d53",
+  "clientId": "cddeda93-51e4-42ad-bba7-b85b38b51b72",
+  "document": {
+    "alias": "poc-sample",
+    "resource": "sharepoint:approved-research",
+    "siteId": "nirvingukhotmail.sharepoint.com,b353bf73-309c-474b-85a2-f3635a7cceff,f8d6bb5e-6c9d-41c8-bd53-0cd08796061e",
+    "siteUrl": "https://nirvingukhotmail.sharepoint.com/sites/FederatedCopilotPoC",
+    "driveId": "b!c79Ts5wwS0eFovNjWnzO_1671vidbMhBvVMM0IeWBh4wXgL5yTfPQIa7JvmlTFAI",
+    "itemId": "01NWNSTC4MOUGXJAZPXREYRNB6KXV5FOEB",
+    "uniqueId": "740d758c-2f83-49bc-88b4-3e55ebd2b881",
+    "name": "federated-copilot-poc.txt",
+    "maxBytes": 201
+  },
+  "expectedSha256": "d37938e1dd000ca43886ac0a36806e7218e70b7f92a1cbca68ea5926adeb9a09"
+}

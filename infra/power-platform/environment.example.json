@@ -1,0 +1,13 @@
+{
+  "tenantId": null,
+  "name": "Federated Copilot PoC",
+  "domain": "federatedcopilotpoc",
+  "region": "australia",
+  "type": "Sandbox",
+  "currency": "AUD",
+  "language": 1033,
+  "securityGroupId": null,
+  "developerUser": null,
+  "environmentId": null,
+  "licenseAndCapacityReviewed": false
+}

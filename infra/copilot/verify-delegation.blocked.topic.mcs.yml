@@ -1,0 +1,17 @@
+mcs.metadata:
+  componentName: Delegated tool verification
+  description: Credential logging protection is not verified; no connector is invoked.
+kind: AdaptiveDialog
+startBehavior: CancelOtherTopics
+beginDialog:
+  kind: OnActivity
+  id: main
+  type: Message
+  priority: -1
+  condition: =Lower(Trim(System.Activity.Text)) = "verify delegated tool access"
+  actions:
+    - kind: SendActivity
+      id: report_unverified
+      activity: Delegated tool access is not verified. The diagnostic is paused pending credential logging protection.
+    - kind: CancelAllDialogs
+      id: finish_verification

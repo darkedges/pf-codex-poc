@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {addMobileRefreshScope} from '../../scripts/pf/mobile-refresh-scope.mjs';
+test('mobile offline scope addition preserves every existing setting without mutating its input',()=>{const before={scopes:['copilot.invoke','copilot.login','m365.document.read'].map(name=>({name,dynamic:false})),setting:{keep:true}};const snapshot=structuredClone(before),after=addMobileRefreshScope(before);assert.deepEqual(before,snapshot);assert.deepEqual(after,{...snapshot,scopes:[...snapshot.scopes,{name:'offline_access',description:'Explicit mobile OIDC offline session renewal; no resource access',dynamic:false}]});});
+test('existing offline scope or missing expected catalog denies amendment',()=>{for(const scopes of [[],[{name:'offline_access',dynamic:false}]])assert.throws(()=>addMobileRefreshScope({scopes}));});

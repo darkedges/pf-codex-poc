@@ -1,0 +1,16 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { CopilotApi } from '../../src/copilot/api.ts';
+import { CopilotError } from '../../src/adapters/copilot.ts';
+const handle='7fc97a69-8e01-42a4-9e61-b0d76d6c74d3';
+function setup(){const calls:any[]=[];const adapter=Object.fromEntries(['open','send','poll','refresh','close'].map(name=>[name,async(...args:any[])=>{calls.push({name,args});if(args.includes('invalid-proof'))throw new CopilotError('invalid_token');return name==='poll'?{state:'awaiting_oauth',messages:[]}:name==='close'?{closed:true}:name==='send'?{submitted:true}:{handle,state:'awaiting_oauth',expiresAt:Date.now()+60000};}]))as never;return{api:new CopilotApi(adapter),calls};}
+const input=(method:string,path:string,body='',authorization='Bearer signed-broker-proof')=>({method,path,rawBody:body,authorization});
+test('Copilot API passes only bearer evidence, opaque handle and plain message to the adapter',async()=>{
+ const s=setup();assert.equal((await s.api.handle(input('POST','/v1/conversations','{}'))).status,201);assert.equal((await s.api.handle(input('POST',`/v1/conversations/${handle}/messages`,JSON.stringify({text:'hello'})))).status,200);assert.equal((await s.api.handle(input('GET',`/v1/conversations/${handle}/activities`))).status,200);assert.equal((await s.api.handle(input('POST',`/v1/conversations/${handle}/refresh`,'{}'))).status,200);assert.equal((await s.api.handle(input('DELETE',`/v1/conversations/${handle}`))).status,200);assert.deepEqual(s.calls.map(c=>c.name),['open','send','poll','refresh','close']);assert.deepEqual(s.calls[1].args,[handle,'signed-broker-proof','hello']);
+});
+for(const patch of [{sub:'other'},{act:{sub:'other'}},{scope:'admin'},{resource:'https://graph.microsoft.com/anywhere'},{conversationId:'external'},{token:'unverified'},{sasUrl:'https://evil.test'}])test('Copilot API rejects identity, scope, token and endpoint fields',async()=>{
+ const s=setup();assert.equal((await s.api.handle(input('POST','/v1/conversations',JSON.stringify(patch)))).status,400);assert.equal((await s.api.handle(input('POST',`/v1/conversations/${handle}/messages`,JSON.stringify({text:'hello',...patch})))).status,400);assert.equal(s.calls.length,0);
+});
+for(const authorization of ['', 'Basic credential','Bearer a b','Bearer signed-broker-proof\nforged'])test('Copilot API requires a single bearer value',async()=>{const s=setup();assert.equal((await s.api.handle(input('POST','/v1/conversations','{}',authorization))).status,401);assert.equal(s.calls.length,0);});
+test('adapter failures have explicit sanitized error contracts',async()=>{const s=setup(),result=await s.api.handle(input('POST','/v1/conversations','{}','Bearer invalid-proof'));assert.equal(result.status,401);assert.deepEqual(result.body,{error:'invalid_token'});assert.ok(!JSON.stringify(result).includes('invalid-proof'));});
+test('oversized JSON, arrays, query strings and arbitrary conversation paths reject',async()=>{const s=setup();for(const i of [input('POST','/v1/conversations','x'.repeat(9000)),input('POST','/v1/conversations','[]'),input('GET',`/v1/conversations/${handle}/activities?identity=forged`),input('POST','/v1/conversations/../other/messages','{}'),input('GET',`/v1/conversations/${handle}/activities`,'{}')])assert.equal((await s.api.handle(i)).status,400);assert.equal(s.calls.length,0);});

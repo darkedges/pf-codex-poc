@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateKeyPair, exportJWK, SignJWT, jwtVerify, decodeJwt } from 'jose';
+import { generateKeyPair, exportJWK, SignJWT, jwtVerify, decodeJwt, decodeProtectedHeader } from 'jose';
 import { PingFederateExchange, JwksTokenVerifier } from '../../src/adapters/pingfederate.ts';
 import { createGateway2Exchange } from '../../src/adapters/gateway-2.ts';
 import { gateway2FromEnvironment } from '../../src/adapters/pingfederate-env.ts';
@@ -31,6 +31,7 @@ function setup(options: { output?: Record<string, unknown>; policy?: () => Promi
     assert.equal(init?.redirect, 'error');
     const form = new URLSearchParams(String(init?.body));
     posts.push(form);
+    assert.equal(decodeProtectedHeader(form.get('client_assertion')!).typ,'client-authentication+jwt');
     const assertion = await jwtVerify(form.get('client_assertion')!, client.publicKey, { issuer: 'gateway-2', audience: endpoint });
     assert.equal(assertion.payload.sub, 'gateway-2');
     assert.ok(assertion.payload.jti);
@@ -87,6 +88,39 @@ test('upstream errors sanitized and exchange POST never retried', async () => {
 test('configuration refuses insecure endpoints', () => {
   const s = setup();
   assert.throws(() => new PingFederateExchange({ ...s.config, tokenEndpoint: 'http://localhost/token' }, { clientKey: client.privateKey, authorise: async () => {} }));
+  assert.throws(() => new PingFederateExchange({ ...s.config, clientAssertionAudience: 'http://localhost' }, { clientKey: client.privateKey, authorise: async () => {} }));
+  assert.throws(() => new PingFederateExchange({ ...s.config, targetParameter: 'untrusted' } as never, { clientKey: client.privateKey, authorise: async () => {} }));
+});
+test('explicit PingFederate client assertion audience is configuration-bound', async () => {
+  const s = setup();
+  let observed = false;
+  const adapter = new PingFederateExchange({ ...s.config, clientAssertionAudience: issuerB }, {
+    clientKey: client.privateKey, authorise: async () => {}, fetch: async (url, init) => {
+      if (String(url).endsWith('/jwks')) return s.transport(url, init);
+      const form = new URLSearchParams(String(init?.body));
+      await jwtVerify(form.get('client_assertion')!,client.publicKey,{issuer:'gateway-2',audience:issuerB});
+      observed = true;
+      return Response.json({ access_token: await token(issuerB), token_type:'Bearer',issued_token_type:'urn:ietf:params:oauth:token-type:access_token',expires_in:110 });
+    },
+  });
+  await adapter.exchange(await token());
+  assert.equal(observed,true);
+});
+test('resource selection for PingFederate ATM is configuration-bound', async () => {
+  const s = setup();
+  let observed = false;
+  const adapter = new PingFederateExchange({ ...s.config, targetParameter: 'resource',requestedResource:'urn:copilot:consent:broker' }, {
+    clientKey: client.privateKey, authorise: async () => {}, fetch: async (url, init) => {
+      if (String(url).endsWith('/jwks')) return s.transport(url, init);
+      const form = new URLSearchParams(String(init?.body));
+      assert.equal(form.get('audience'),null);
+      assert.equal(form.get('resource'),'urn:copilot:consent:broker');
+      observed = true;
+      return Response.json({access_token:await token(issuerB),token_type:'Bearer',issued_token_type:'urn:ietf:params:oauth:token-type:access_token',expires_in:110});
+    },
+  });
+  await adapter.exchange(await token());
+  assert.equal(observed,true);
 });
 
 test('client assertions use a fresh jti on every exchange', async () => {
@@ -95,6 +129,15 @@ test('client assertions use a fresh jti on every exchange', async () => {
   await s.adapter.exchange(original);
   await s.adapter.exchange(original);
   assert.notEqual(decodeJwt(s.posts[0].get('client_assertion')!).jti, decodeJwt(s.posts[1].get('client_assertion')!).jti);
+});
+test('online policy receives the signed token at each exchange boundary',async()=>{
+  const s=setup();const original=await token();let calls=0;
+  const adapter=new PingFederateExchange(s.config,{clientKey:client.privateKey,fetch:s.transport,authorise:async(claims,evidence)=>{
+    assert.equal(typeof evidence?.accessToken,'string');
+    assert.equal(evidence!.accessToken===original,calls===0);
+    assert.equal(claims.iss,calls++===0?issuerA:issuerB);
+  }});
+  await adapter.exchange(original);assert.equal(calls,2);
 });
 for (const [name, patch, header] of [
   ['issuer', { iss: 'https://evil.example' }, {}],
